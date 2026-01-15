@@ -1,4 +1,4 @@
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { mockMspData } from '@/data/mockMsp';
 import { SITE_TYPES } from '@/types/msp';
 import { DifficultyBadge } from '@/components/ui/DifficultyBadge';
@@ -13,7 +13,9 @@ import {
   Users,
   Wrench,
   Shield,
-  Eye
+  Eye,
+  ArrowLeft,
+  Home
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -35,13 +37,22 @@ export default function PublicMSP() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Public Banner */}
+      {/* Public Banner with Back Button */}
       <div className="bg-primary/10 border-b border-primary/20 px-4 py-2">
-        <div className="container flex items-center justify-center gap-2 text-sm">
-          <Eye className="w-4 h-4 text-primary" />
-          <span className="text-primary font-medium">
-            Fiche partagée – Lecture seule
-          </span>
+        <div className="container flex items-center justify-between text-sm">
+          <Link to="/">
+            <Button variant="ghost" size="sm" className="gap-1.5 text-primary hover:text-primary hover:bg-primary/10">
+              <Home className="w-4 h-4" />
+              <span className="hidden sm:inline">Accueil</span>
+            </Button>
+          </Link>
+          <div className="flex items-center gap-2">
+            <Eye className="w-4 h-4 text-primary" />
+            <span className="text-primary font-medium">
+              Fiche partagée – Lecture seule
+            </span>
+          </div>
+          <div className="w-[76px] sm:w-[88px]" /> {/* Spacer for centering */}
         </div>
       </div>
 
