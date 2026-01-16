@@ -1,0 +1,4 @@
+project_id = "tvykfiphovqsyktoqqoc"
+
+[functions.generate-msp]
+verify_jwt = false
