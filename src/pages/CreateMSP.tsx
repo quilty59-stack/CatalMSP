@@ -1,17 +1,10 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Layout } from '@/components/Layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { 
   SiteType, 
   Theme, 
@@ -20,13 +13,16 @@ import {
 } from '@/types/msp';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
+  Camera,
   MapPin, 
   Sparkles,
   ChevronLeft,
   ChevronRight,
   Check,
   Building2,
-  Loader2
+  Loader2,
+  Navigation,
+  X
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -35,8 +31,12 @@ export default function CreateMSP() {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isLocating, setIsLocating] = useState(false);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
   const [formData, setFormData] = useState({
-    // Essential info
     siteName: '',
     siteType: '' as SiteType | '',
     commune: '',
@@ -50,11 +50,110 @@ export default function CreateMSP() {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
+  const handlePhotoCapture = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setPhotoFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPhotoPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removePhoto = () => {
+    setPhotoPreview(null);
+    setPhotoFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const handleGeolocation = async () => {
+    if (!navigator.geolocation) {
+      toast.error('La géolocalisation n\'est pas supportée par votre navigateur');
+      return;
+    }
+
+    setIsLocating(true);
+    
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        
+        // Generate Google Maps link
+        const mapsLink = `https://www.google.com/maps?q=${latitude},${longitude}`;
+        updateField('mapsLink', mapsLink);
+        
+        // Try to get address via reverse geocoding (using Nominatim - free OSM service)
+        try {
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&addressdetails=1`,
+            { headers: { 'Accept-Language': 'fr' } }
+          );
+          const data = await response.json();
+          
+          if (data.address) {
+            const addr = data.address;
+            const addressParts = [
+              addr.house_number,
+              addr.road,
+              addr.postcode,
+              addr.city || addr.town || addr.village || addr.municipality
+            ].filter(Boolean);
+            
+            updateField('address', addressParts.join(' '));
+            updateField('commune', addr.city || addr.town || addr.village || addr.municipality || '');
+          }
+          
+          toast.success('Position localisée !');
+        } catch (error) {
+          console.error('Reverse geocoding error:', error);
+          toast.success('Position localisée (adresse non disponible)');
+        }
+        
+        setIsLocating(false);
+      },
+      (error) => {
+        console.error('Geolocation error:', error);
+        toast.error('Impossible d\'obtenir votre position');
+        setIsLocating(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
+
   const canProceed = () => {
     if (currentStep === 1) {
+      return photoPreview !== null;
+    }
+    if (currentStep === 2) {
       return formData.siteName && formData.siteType && formData.commune;
     }
     return formData.theme;
+  };
+
+  const uploadPhoto = async (mspId: string): Promise<string | null> => {
+    if (!photoFile) return null;
+    
+    const fileExt = photoFile.name.split('.').pop();
+    const fileName = `${mspId}/entree-${Date.now()}.${fileExt}`;
+    
+    const { data, error } = await supabase.storage
+      .from('msp-photos')
+      .upload(fileName, photoFile);
+    
+    if (error) {
+      console.error('Photo upload error:', error);
+      return null;
+    }
+    
+    const { data: urlData } = supabase.storage
+      .from('msp-photos')
+      .getPublicUrl(fileName);
+    
+    return urlData.publicUrl;
   };
 
   const handleGenerateMSP = async () => {
@@ -66,7 +165,8 @@ export default function CreateMSP() {
     setIsGenerating(true);
     
     try {
-      const { data, error } = await supabase.functions.invoke('generate-msp', {
+      // Call AI to generate MSP content
+      const { data: aiData, error: aiError } = await supabase.functions.invoke('generate-msp', {
         body: {
           siteName: formData.siteName,
           siteType: formData.siteType,
@@ -77,22 +177,81 @@ export default function CreateMSP() {
         },
       });
 
-      if (error) {
-        console.error('Error calling generate-msp:', error);
+      if (aiError) {
+        console.error('Error calling generate-msp:', aiError);
         toast.error('Erreur lors de la génération. Veuillez réessayer.');
         return;
       }
 
-      if (data?.error) {
-        toast.error(data.error);
+      if (aiData?.error) {
+        toast.error(aiData.error);
         return;
       }
 
-      if (data?.success && data?.mspData) {
-        toast.success('Fiche MSP générée avec succès !');
-        // TODO: Save to database and navigate to the created MSP
-        // For now, just show success and go to catalogue
-        navigate('/catalogue');
+      if (aiData?.success && aiData?.mspData) {
+        const mspContent = aiData.mspData;
+        
+        // Generate a temporary slug (will be overwritten by trigger if using one)
+        const tempSlug = `msp-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`;
+        
+        // Save MSP to database
+        const mspInsertData = {
+          slug: tempSlug,
+          title: mspContent.title || `MSP ${formData.siteName}`,
+          theme: formData.theme,
+          status: 'brouillon',
+          difficulty: mspContent.difficulty || 2,
+          site_name: formData.siteName,
+          site_type: formData.siteType as string,
+          commune: formData.commune,
+          address: formData.address,
+          maps_link: formData.mapsLink,
+          site_notes: mspContent.siteNotes,
+          competences: mspContent.competences,
+          objectives: mspContent.objectives,
+          situation: mspContent.situation,
+          mission_reason: mspContent.missionReason,
+          difficulty_facilitator: mspContent.difficultyFacilitator,
+          difficulty_initial: mspContent.difficultyInitial,
+          difficulty_complex: mspContent.difficultyComplex,
+          instructions: mspContent.instructions,
+          expected_activities: mspContent.expectedActivities,
+          cognitive_effects: mspContent.cognitiveEffects,
+          reservation_details: mspContent.reservationDetails,
+          has_water_point: mspContent.hasWaterPoint || false,
+          water_point_details: mspContent.waterPointDetails,
+          authorizations: mspContent.authorizations,
+          constraints: mspContent.constraints,
+          safety_briefing: mspContent.safetyBriefing,
+          equipment: mspContent.equipment || [],
+        };
+
+        const { data: mspRecord, error: insertError } = await supabase
+          .from('msp')
+          .insert([mspInsertData])
+          .select()
+          .single();
+
+        if (insertError) {
+          console.error('Error saving MSP:', insertError);
+          toast.error('Erreur lors de la sauvegarde');
+          return;
+        }
+
+        // Upload photo if available
+        if (photoFile && mspRecord) {
+          const photoUrl = await uploadPhoto(mspRecord.id);
+          if (photoUrl) {
+            await supabase.from('msp_photos').insert({
+              msp_id: mspRecord.id,
+              category: 'entree_principale',
+              image_url: photoUrl,
+            });
+          }
+        }
+
+        toast.success('Fiche MSP créée avec succès !');
+        navigate(`/msp/${mspRecord.slug}`);
       }
     } catch (err) {
       console.error('Unexpected error:', err);
@@ -107,6 +266,76 @@ export default function CreateMSP() {
       case 1:
         return (
           <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Prenez une photo de l'entrée principale du site pour commencer.
+            </p>
+            
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              onChange={handlePhotoCapture}
+              className="hidden"
+            />
+            
+            {photoPreview ? (
+              <div className="relative">
+                <img 
+                  src={photoPreview} 
+                  alt="Entrée principale" 
+                  className="w-full h-64 object-cover rounded-xl"
+                />
+                <Button
+                  variant="destructive"
+                  size="icon"
+                  className="absolute top-2 right-2"
+                  onClick={removePhoto}
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            ) : (
+              <div 
+                className="photo-upload-zone h-64 cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <Camera className="w-12 h-12 text-muted-foreground" />
+                <span className="text-base font-medium text-muted-foreground">
+                  Prendre une photo de l'entrée
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  Appuyez pour ouvrir la caméra
+                </span>
+              </div>
+            )}
+          </div>
+        );
+
+      case 2:
+        return (
+          <div className="space-y-4">
+            {/* Geolocation button */}
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full gap-2"
+              onClick={handleGeolocation}
+              disabled={isLocating}
+            >
+              {isLocating ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Localisation en cours...
+                </>
+              ) : (
+                <>
+                  <Navigation className="w-4 h-4" />
+                  Me localiser automatiquement
+                </>
+              )}
+            </Button>
+
             <div className="space-y-2">
               <Label htmlFor="siteName">Nom du site *</Label>
               <Input
@@ -118,22 +347,23 @@ export default function CreateMSP() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="siteType">Type de site *</Label>
-              <Select
-                value={formData.siteType}
-                onValueChange={(value) => updateField('siteType', value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Sélectionner un type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {(Object.keys(SITE_TYPES) as SiteType[]).map((type) => (
-                    <SelectItem key={type} value={type}>
-                      {SITE_TYPES[type]}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label>Type de site *</Label>
+              <div className="grid grid-cols-2 gap-2">
+                {(Object.keys(SITE_TYPES) as SiteType[]).map((type) => (
+                  <Button
+                    key={type}
+                    type="button"
+                    variant={formData.siteType === type ? 'default' : 'outline'}
+                    className={`h-auto py-3 px-4 justify-start ${
+                      formData.siteType === type ? 'gradient-hero border-0' : ''
+                    }`}
+                    onClick={() => updateField('siteType', type)}
+                  >
+                    <Building2 className="w-4 h-4 mr-2 shrink-0" />
+                    <span className="text-sm">{SITE_TYPES[type]}</span>
+                  </Button>
+                ))}
+              </div>
             </div>
 
             <div className="space-y-2">
@@ -147,7 +377,7 @@ export default function CreateMSP() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="address">Adresse (optionnel)</Label>
+              <Label htmlFor="address">Adresse</Label>
               <Input
                 id="address"
                 placeholder="Adresse complète du site"
@@ -157,37 +387,50 @@ export default function CreateMSP() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="mapsLink">Lien Google Maps (optionnel)</Label>
-              <Input
-                id="mapsLink"
-                placeholder="https://maps.google.com/..."
-                value={formData.mapsLink}
-                onChange={(e) => updateField('mapsLink', e.target.value)}
-              />
+              <Label htmlFor="mapsLink">Lien Google Maps</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="mapsLink"
+                  placeholder="https://maps.google.com/..."
+                  value={formData.mapsLink}
+                  onChange={(e) => updateField('mapsLink', e.target.value)}
+                  className="flex-1"
+                />
+                {formData.mapsLink && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={() => window.open(formData.mapsLink, '_blank')}
+                  >
+                    <MapPin className="w-4 h-4" />
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
         );
 
-      case 2:
+      case 3:
         return (
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="theme">Thème de la MSP *</Label>
-              <Select
-                value={formData.theme}
-                onValueChange={(value) => updateField('theme', value)}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {(Object.keys(THEMES) as Theme[]).map((theme) => (
-                    <SelectItem key={theme} value={theme}>
-                      {THEMES[theme]}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label>Thème de la MSP *</Label>
+              <div className="grid grid-cols-2 gap-2">
+                {(Object.keys(THEMES) as Theme[]).map((theme) => (
+                  <Button
+                    key={theme}
+                    type="button"
+                    variant={formData.theme === theme ? 'default' : 'outline'}
+                    className={`h-auto py-3 px-4 justify-start ${
+                      formData.theme === theme ? 'gradient-hero border-0' : ''
+                    }`}
+                    onClick={() => updateField('theme', theme)}
+                  >
+                    <span className="text-sm">{THEMES[theme]}</span>
+                  </Button>
+                ))}
+              </div>
             </div>
 
             <div className="space-y-2">
@@ -203,7 +446,7 @@ export default function CreateMSP() {
                 className="resize-none"
               />
               <p className="text-xs text-muted-foreground">
-                Plus vous donnez de détails, plus la fiche générée sera adaptée à vos besoins.
+                Plus vous donnez de détails, plus la fiche générée sera adaptée.
               </p>
             </div>
 
@@ -213,9 +456,8 @@ export default function CreateMSP() {
                 <div>
                   <h4 className="font-semibold text-foreground">Génération IA</h4>
                   <p className="text-sm text-muted-foreground mt-1">
-                    L'IA va générer automatiquement une fiche MSP complète avec : 
-                    objectifs pédagogiques, niveaux de difficulté, consignes, 
-                    organisation, matériel nécessaire...
+                    L'IA génère automatiquement : objectifs pédagogiques, 
+                    niveaux de difficulté, consignes, organisation, matériel...
                   </p>
                 </div>
               </div>
@@ -229,8 +471,9 @@ export default function CreateMSP() {
   };
 
   const steps = [
-    { id: 1, title: 'Site', icon: Building2 },
-    { id: 2, title: 'Scénario', icon: Sparkles },
+    { id: 1, title: 'Photo', icon: Camera },
+    { id: 2, title: 'Site', icon: Building2 },
+    { id: 3, title: 'Scénario', icon: Sparkles },
   ];
 
   return (
@@ -345,12 +588,12 @@ export default function CreateMSP() {
               {isGenerating ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Génération en cours...
+                  Génération...
                 </>
               ) : (
                 <>
                   <Sparkles className="w-4 h-4 mr-2" />
-                  Générer la fiche MSP
+                  Générer la fiche
                 </>
               )}
             </Button>

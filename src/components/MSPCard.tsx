@@ -46,7 +46,7 @@ export function MSPCard({ msp, index = 0 }: MSPCardProps) {
             </div>
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <Calendar className="w-3.5 h-3.5" />
-              {msp.updatedAt.toLocaleDateString('fr-FR', { 
+              {new Date(msp.updatedAt).toLocaleDateString('fr-FR', { 
                 day: 'numeric', 
                 month: 'short' 
               })}
