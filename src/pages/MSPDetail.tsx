@@ -1,7 +1,6 @@
 import { useParams, Link } from 'react-router-dom';
 import { Layout } from '@/components/Layout';
-import { mockMspData } from '@/data/mockMsp';
-import { SITE_TYPES, THEMES } from '@/types/msp';
+import { SITE_TYPES } from '@/types/msp';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { DifficultyBadge } from '@/components/ui/DifficultyBadge';
 import { ThemeBadge } from '@/components/ui/ThemeBadge';
@@ -18,7 +17,8 @@ import {
   BookOpen,
   Users,
   Wrench,
-  ChevronRight
+  ChevronRight,
+  Loader2
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { QRCodeSVG } from 'qrcode.react';
@@ -30,13 +30,24 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import { useMsp } from '@/hooks/useMsp';
 
 export default function MSPDetail() {
   const { slug } = useParams();
-  const msp = mockMspData.find((m) => m.slug === slug);
+  const { msp, isLoading, error } = useMsp(slug);
   const [showQR, setShowQR] = useState(false);
 
-  if (!msp) {
+  if (isLoading) {
+    return (
+      <Layout showBack>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      </Layout>
+    );
+  }
+
+  if (!msp || error) {
     return (
       <Layout showBack>
         <div className="flex flex-col items-center justify-center min-h-[60vh] px-4">
@@ -177,13 +188,13 @@ export default function MSPDetail() {
               <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
                 Compétences visées
               </label>
-              <p className="text-foreground mt-1">{msp.competences}</p>
+              <p className="text-foreground mt-1">{msp.competences || 'Non défini'}</p>
             </div>
             <div>
               <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
                 Objectifs / Attentes
               </label>
-              <p className="text-foreground mt-1">{msp.objectives}</p>
+              <p className="text-foreground mt-1">{msp.objectives || 'Non défini'}</p>
             </div>
           </div>
         </motion.div>
@@ -205,13 +216,13 @@ export default function MSPDetail() {
               <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
                 Contexte
               </label>
-              <p className="text-foreground mt-1">{msp.situation}</p>
+              <p className="text-foreground mt-1">{msp.situation || 'Non défini'}</p>
             </div>
             <div>
               <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
                 Motif de l'ordre de mission
               </label>
-              <p className="text-foreground mt-1">{msp.missionReason}</p>
+              <p className="text-foreground mt-1">{msp.missionReason || 'Non défini'}</p>
             </div>
           </div>
         </motion.div>
@@ -319,14 +330,18 @@ export default function MSPDetail() {
           </h2>
           
           <div className="flex flex-wrap gap-2">
-            {msp.equipment.map((item) => (
-              <span
-                key={item}
-                className="px-3 py-1.5 bg-secondary text-secondary-foreground rounded-lg text-sm font-medium"
-              >
-                {item}
-              </span>
-            ))}
+            {msp.equipment.length > 0 ? (
+              msp.equipment.map((item) => (
+                <span
+                  key={item}
+                  className="px-3 py-1.5 bg-secondary text-secondary-foreground rounded-lg text-sm font-medium"
+                >
+                  {item}
+                </span>
+              ))
+            ) : (
+              <p className="text-muted-foreground text-sm">Aucun matériel spécifié</p>
+            )}
           </div>
           {msp.otherEquipment && (
             <p className="text-sm text-muted-foreground mt-3">

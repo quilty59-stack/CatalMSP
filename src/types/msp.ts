@@ -63,8 +63,8 @@ export interface MSP {
   qrCodeImage?: string;
   
   // Timestamps
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: Date | string;
+  updatedAt: Date | string;
 }
 
 export const SITE_TYPES: Record<SiteType, string> = {

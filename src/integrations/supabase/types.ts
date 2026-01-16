@@ -14,7 +14,149 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      msp: {
+        Row: {
+          address: string | null
+          authorizations: string | null
+          cognitive_effects: string | null
+          commune: string
+          competences: string | null
+          constraints: string | null
+          created_at: string
+          difficulty: number
+          difficulty_complex: string | null
+          difficulty_facilitator: string | null
+          difficulty_initial: string | null
+          equipment: string[] | null
+          expected_activities: string | null
+          has_water_point: boolean | null
+          id: string
+          instructions: string | null
+          maps_link: string | null
+          mission_reason: string | null
+          objectives: string | null
+          other_equipment: string | null
+          public_url: string | null
+          reservation_details: string | null
+          safety_briefing: string | null
+          site_name: string
+          site_notes: string | null
+          site_type: string
+          situation: string | null
+          slug: string
+          status: string
+          theme: string
+          title: string
+          updated_at: string
+          water_point_details: string | null
+        }
+        Insert: {
+          address?: string | null
+          authorizations?: string | null
+          cognitive_effects?: string | null
+          commune: string
+          competences?: string | null
+          constraints?: string | null
+          created_at?: string
+          difficulty?: number
+          difficulty_complex?: string | null
+          difficulty_facilitator?: string | null
+          difficulty_initial?: string | null
+          equipment?: string[] | null
+          expected_activities?: string | null
+          has_water_point?: boolean | null
+          id?: string
+          instructions?: string | null
+          maps_link?: string | null
+          mission_reason?: string | null
+          objectives?: string | null
+          other_equipment?: string | null
+          public_url?: string | null
+          reservation_details?: string | null
+          safety_briefing?: string | null
+          site_name: string
+          site_notes?: string | null
+          site_type: string
+          situation?: string | null
+          slug: string
+          status?: string
+          theme?: string
+          title: string
+          updated_at?: string
+          water_point_details?: string | null
+        }
+        Update: {
+          address?: string | null
+          authorizations?: string | null
+          cognitive_effects?: string | null
+          commune?: string
+          competences?: string | null
+          constraints?: string | null
+          created_at?: string
+          difficulty?: number
+          difficulty_complex?: string | null
+          difficulty_facilitator?: string | null
+          difficulty_initial?: string | null
+          equipment?: string[] | null
+          expected_activities?: string | null
+          has_water_point?: boolean | null
+          id?: string
+          instructions?: string | null
+          maps_link?: string | null
+          mission_reason?: string | null
+          objectives?: string | null
+          other_equipment?: string | null
+          public_url?: string | null
+          reservation_details?: string | null
+          safety_briefing?: string | null
+          site_name?: string
+          site_notes?: string | null
+          site_type?: string
+          situation?: string | null
+          slug?: string
+          status?: string
+          theme?: string
+          title?: string
+          updated_at?: string
+          water_point_details?: string | null
+        }
+        Relationships: []
+      }
+      msp_photos: {
+        Row: {
+          category: string
+          comment: string | null
+          created_at: string
+          id: string
+          image_url: string
+          msp_id: string
+        }
+        Insert: {
+          category: string
+          comment?: string | null
+          created_at?: string
+          id?: string
+          image_url: string
+          msp_id: string
+        }
+        Update: {
+          category?: string
+          comment?: string | null
+          created_at?: string
+          id?: string
+          image_url?: string
+          msp_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "msp_photos_msp_id_fkey"
+            columns: ["msp_id"]
+            isOneToOne: false
+            referencedRelation: "msp"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

@@ -1,21 +1,91 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Layout } from '@/components/Layout';
 import { MSPCard } from '@/components/MSPCard';
 import { mockMspData } from '@/data/mockMsp';
-import { Theme, Status, THEMES, STATUSES } from '@/types/msp';
+import { Theme, Status, THEMES, STATUSES, MSP } from '@/types/msp';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search, Filter, X } from 'lucide-react';
+import { Search, Filter, X, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function Catalogue() {
   const [search, setSearch] = useState('');
   const [themeFilter, setThemeFilter] = useState<Theme | null>(null);
   const [statusFilter, setStatusFilter] = useState<Status | null>(null);
   const [showFilters, setShowFilters] = useState(false);
+  const [dbMspList, setDbMspList] = useState<MSP[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    loadMspFromDatabase();
+  }, []);
+
+  const loadMspFromDatabase = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('msp')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error loading MSP:', error);
+        return;
+      }
+
+      if (data) {
+        // Transform database records to MSP type
+        const transformed: MSP[] = data.map((record) => ({
+          id: record.id,
+          slug: record.slug,
+          title: record.title,
+          theme: record.theme as Theme,
+          status: record.status as Status,
+          difficulty: record.difficulty as 1 | 2 | 3,
+          siteName: record.site_name,
+          siteType: record.site_type as any,
+          commune: record.commune,
+          address: record.address || '',
+          mapsLink: record.maps_link || '',
+          siteNotes: record.site_notes || '',
+          competences: record.competences || '',
+          objectives: record.objectives || '',
+          situation: record.situation || '',
+          missionReason: record.mission_reason || '',
+          difficultyFacilitator: record.difficulty_facilitator || '',
+          difficultyInitial: record.difficulty_initial || '',
+          difficultyComplex: record.difficulty_complex || '',
+          instructions: record.instructions || '',
+          expectedActivities: record.expected_activities || '',
+          cognitiveEffects: record.cognitive_effects || '',
+          reservationDetails: record.reservation_details || '',
+          hasWaterPoint: record.has_water_point || false,
+          waterPointDetails: record.water_point_details || '',
+          authorizations: record.authorizations || '',
+          constraints: record.constraints || '',
+          safetyBriefing: record.safety_briefing || '',
+          equipment: record.equipment || [],
+          otherEquipment: record.other_equipment || '',
+          photos: [],
+          createdAt: record.created_at,
+          updatedAt: record.updated_at,
+        }));
+        setDbMspList(transformed);
+      }
+    } catch (err) {
+      console.error('Unexpected error:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Combine mock data with database data
+  const allMspData = useMemo(() => {
+    return [...dbMspList, ...mockMspData];
+  }, [dbMspList]);
 
   const filteredMsp = useMemo(() => {
-    return mockMspData.filter((msp) => {
+    return allMspData.filter((msp) => {
       const searchLower = search.toLowerCase();
       const matchesSearch =
         msp.title.toLowerCase().includes(searchLower) ||
@@ -27,7 +97,7 @@ export default function Catalogue() {
 
       return matchesSearch && matchesTheme && matchesStatus;
     });
-  }, [search, themeFilter, statusFilter]);
+  }, [search, themeFilter, statusFilter, allMspData]);
 
   const clearFilters = () => {
     setThemeFilter(null);
@@ -129,7 +199,11 @@ export default function Catalogue() {
 
         {/* Results */}
         <div className="space-y-3">
-          {filteredMsp.length > 0 ? (
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="w-6 h-6 animate-spin text-primary" />
+            </div>
+          ) : filteredMsp.length > 0 ? (
             filteredMsp.map((msp, index) => (
               <MSPCard key={msp.id} msp={msp} index={index} />
             ))
