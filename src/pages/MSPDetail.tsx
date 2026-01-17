@@ -5,6 +5,7 @@ import { StatusBadge } from '@/components/ui/StatusBadge';
 import { DifficultyBadge } from '@/components/ui/DifficultyBadge';
 import { ThemeBadge } from '@/components/ui/ThemeBadge';
 import { Button } from '@/components/ui/button';
+import { MapEmbed } from '@/components/MapEmbed';
 import { 
   MapPin, 
   ExternalLink, 
@@ -110,22 +111,27 @@ export default function MSPDetail() {
           </div>
 
           {msp.address && (
-            <div className="flex items-start gap-2 p-3 bg-muted rounded-lg text-sm">
-              <MapPin className="w-4 h-4 mt-0.5 text-muted-foreground shrink-0" />
-              <div className="flex-1">
-                <p className="text-foreground">{msp.address}</p>
-                {msp.mapsLink && (
-                  <a
-                    href={msp.mapsLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-primary mt-1 hover:underline"
-                  >
-                    Ouvrir dans Maps
-                    <ExternalLink className="w-3 h-3" />
-                  </a>
-                )}
+            <div className="space-y-3">
+              <div className="flex items-start gap-2 p-3 bg-muted rounded-lg text-sm">
+                <MapPin className="w-4 h-4 mt-0.5 text-muted-foreground shrink-0" />
+                <div className="flex-1">
+                  <p className="text-foreground">{msp.address}</p>
+                  {msp.mapsLink && (
+                    <a
+                      href={msp.mapsLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-primary mt-1 hover:underline"
+                    >
+                      Ouvrir dans Maps
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  )}
+                </div>
               </div>
+              
+              {/* Map Embed */}
+              <MapEmbed address={msp.address} mapsLink={msp.mapsLink} />
             </div>
           )}
         </motion.div>

@@ -8,9 +8,10 @@ import { useState, useEffect } from 'react';
 import { useMsp } from '@/hooks/useMsp';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Loader2, Save, ArrowLeft, MapPin, Target, BookOpen, Users, AlertTriangle, Wrench } from 'lucide-react';
+import { Loader2, Save, ArrowLeft, MapPin, Target, BookOpen, Users, AlertTriangle, Wrench, Camera } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { SITE_TYPES, THEMES, SiteType, Theme } from '@/types/msp';
+import { PhotoManager } from '@/components/PhotoManager';
 
 export default function EditMSP() {
   const { slug } = useParams();
@@ -502,11 +503,26 @@ export default function EditMSP() {
           </div>
         </motion.div>
 
-        {/* Save Button */}
+        {/* Photos */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
+          className="form-section"
+        >
+          <h2 className="form-section-title">
+            <Camera className="w-5 h-5 text-primary" />
+            Photos
+          </h2>
+          
+          <PhotoManager mspId={msp.id} />
+        </motion.div>
+
+        {/* Save Button */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.45 }}
           className="fixed bottom-20 left-0 right-0 px-4 pb-4 bg-gradient-to-t from-background via-background to-transparent pt-8"
         >
           <Button 
