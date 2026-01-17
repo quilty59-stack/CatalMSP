@@ -7,6 +7,7 @@ import Index from "./pages/Index";
 import Catalogue from "./pages/Catalogue";
 import CreateMSP from "./pages/CreateMSP";
 import MSPDetail from "./pages/MSPDetail";
+import EditMSP from "./pages/EditMSP";
 import PublicMSP from "./pages/PublicMSP";
 import Scanner from "./pages/Scanner";
 import NotFound from "./pages/NotFound";
@@ -24,6 +25,7 @@ const App = () => (
           <Route path="/catalogue" element={<Catalogue />} />
           <Route path="/creer" element={<CreateMSP />} />
           <Route path="/msp/:slug" element={<MSPDetail />} />
+          <Route path="/msp/:slug/edit" element={<EditMSP />} />
           <Route path="/public/:slug" element={<PublicMSP />} />
           <Route path="/scanner" element={<Scanner />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

@@ -137,10 +137,12 @@ export default function MSPDetail() {
           transition={{ delay: 0.1 }}
           className="flex gap-2"
         >
-          <Button className="flex-1 gap-2" variant="outline">
-            <Edit className="w-4 h-4" />
-            Modifier
-          </Button>
+          <Link to={`/msp/${msp.slug}/edit`} className="flex-1">
+            <Button className="w-full gap-2" variant="outline">
+              <Edit className="w-4 h-4" />
+              Modifier
+            </Button>
+          </Link>
           <Dialog open={showQR} onOpenChange={setShowQR}>
             <DialogTrigger asChild>
               <Button className="flex-1 gap-2" variant="outline">
