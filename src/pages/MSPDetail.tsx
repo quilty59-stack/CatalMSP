@@ -111,27 +111,29 @@ export default function MSPDetail() {
           </div>
 
           {msp.address && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 items-stretch">
-              <div className="flex items-start gap-2 p-3 bg-muted rounded-lg text-sm h-full">
-                <MapPin className="w-4 h-4 mt-0.5 text-muted-foreground shrink-0" />
-                <div className="flex-1">
-                  <p className="text-foreground">{msp.address}</p>
-                  {msp.mapsLink && (
-                    <a
-                      href={msp.mapsLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-primary mt-1 hover:underline"
-                    >
-                      Ouvrir dans Maps
-                      <ExternalLink className="w-3 h-3" />
-                    </a>
-                  )}
+            <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-4 items-stretch">
+              <div className="flex flex-col justify-center gap-1 p-4 bg-muted/50 rounded-xl border border-border/50">
+                <div className="flex items-center gap-2">
+                  <MapPin className="w-4 h-4 text-muted-foreground shrink-0" />
+                  <p className="text-foreground font-medium">{msp.address}</p>
                 </div>
+                {msp.mapsLink && (
+                  <a
+                    href={msp.mapsLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-primary text-sm ml-6 hover:underline"
+                  >
+                    Ouvrir dans Maps
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                )}
               </div>
               
-              {/* Map Embed */}
-              <MapEmbed address={msp.address} mapsLink={msp.mapsLink} />
+              {/* Map Embed - fixed width for alignment */}
+              <div className="w-full md:w-[280px]">
+                <MapEmbed address={msp.address} mapsLink={msp.mapsLink} />
+              </div>
             </div>
           )}
         </motion.div>
