@@ -82,60 +82,61 @@ export default function MSPDetail() {
   return (
     <Layout showBack backTo="/catalogue">
       <div className="px-4 py-4 space-y-4">
-        {/* Header Card */}
+        {/* Header Card - 3 columns: Title | Info | Map */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="card-elevated p-5"
         >
-          <div className="flex items-start justify-between gap-3 mb-4">
-            <div className="flex-1">
-              <h1 className="font-display text-xl font-bold text-foreground mb-1">
-                {msp.title}
-              </h1>
-              <p className="text-muted-foreground">{msp.siteName}</p>
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_1fr_1.2fr] gap-4 items-stretch">
+            {/* Left: Title */}
+            <div className="flex flex-col gap-2">
+              <div className="flex items-start justify-between gap-2">
+                <h1 className="font-display text-lg font-bold text-foreground leading-tight">
+                  {msp.title}
+                </h1>
+                <DifficultyBadge level={msp.difficulty} />
+              </div>
+              <p className="text-muted-foreground text-sm">{msp.siteName}</p>
+              <div className="flex items-center gap-2 flex-wrap mt-1">
+                <ThemeBadge theme={msp.theme} />
+                <StatusBadge status={msp.status} />
+              </div>
             </div>
-            <DifficultyBadge level={msp.difficulty} />
-          </div>
 
-          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
-            <MapPin className="w-4 h-4" />
-            <span>{msp.commune}</span>
-            <span className="text-border">•</span>
-            <span>{SITE_TYPES[msp.siteType]}</span>
-          </div>
-
-          <div className="flex items-center gap-2 flex-wrap mb-4">
-            <ThemeBadge theme={msp.theme} />
-            <StatusBadge status={msp.status} />
-          </div>
-
-          {msp.address && (
-            <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-4 items-stretch">
-              <div className="flex flex-col justify-center gap-1 p-4 bg-muted/50 rounded-xl border border-border/50">
-                <div className="flex items-center gap-2">
-                  <MapPin className="w-4 h-4 text-muted-foreground shrink-0" />
-                  <p className="text-foreground font-medium">{msp.address}</p>
+            {/* Middle: Information */}
+            <div className="flex flex-col justify-center gap-2 p-3 bg-muted/30 rounded-lg border border-border/30">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <MapPin className="w-3.5 h-3.5" />
+                <span>{msp.commune}</span>
+                <span className="text-border">•</span>
+                <span>{SITE_TYPES[msp.siteType]}</span>
+              </div>
+              {msp.address && (
+                <div className="flex flex-col gap-1">
+                  <p className="text-xs text-muted-foreground leading-relaxed">{msp.address}</p>
+                  {msp.mapsLink && (
+                    <a
+                      href={msp.mapsLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-primary text-xs hover:underline"
+                    >
+                      Ouvrir dans Maps
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  )}
                 </div>
-                {msp.mapsLink && (
-                  <a
-                    href={msp.mapsLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-primary text-sm ml-6 hover:underline"
-                  >
-                    Ouvrir dans Maps
-                    <ExternalLink className="w-3 h-3" />
-                  </a>
-                )}
-              </div>
-              
-              {/* Map Embed - fixed width for alignment */}
-              <div className="w-full md:w-[280px]">
-                <MapEmbed address={msp.address} mapsLink={msp.mapsLink} />
-              </div>
+              )}
             </div>
-          )}
+
+            {/* Right: Map - takes at least half */}
+            {msp.address && (
+              <div className="h-[160px] lg:h-full min-h-[140px]">
+                <MapEmbed address={msp.address} mapsLink={msp.mapsLink} className="h-full" />
+              </div>
+            )}
+          </div>
         </motion.div>
 
         {/* Actions */}
