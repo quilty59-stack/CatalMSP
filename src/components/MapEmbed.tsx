@@ -62,12 +62,16 @@ export function MapEmbed({ address, mapsLink, className = '' }: MapEmbedProps) {
     }
   }, [address, encodedAddress]);
 
-  // Create OpenStreetMap embed URL with coordinates
+  // Create OpenStreetMap embed URL with coordinates - zoomed in for street-level view
   const getMapEmbedUrl = () => {
     if (!coordinates) return null;
-    const bbox = `${coordinates.lon - 0.005},${coordinates.lat - 0.003},${coordinates.lon + 0.005},${coordinates.lat + 0.003}`;
+    // Smaller bbox = more zoom (street level)
+    const bbox = `${coordinates.lon - 0.002},${coordinates.lat - 0.001},${coordinates.lon + 0.002},${coordinates.lat + 0.001}`;
     return `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${coordinates.lat},${coordinates.lon}`;
   };
+  
+  // Use provided mapsLink (Google Maps) or fallback to OSM
+  const externalMapLink = mapsLink || osmSearchUrl;
 
   const mapUrl = getMapEmbedUrl();
 
@@ -92,9 +96,9 @@ export function MapEmbed({ address, mapsLink, className = '' }: MapEmbedProps) {
             className="rounded-xl"
             style={{ border: 0 }}
           />
-          {/* Overlay link for opening in Maps */}
+          {/* Overlay link for opening in Google Maps */}
           <a
-            href={mapsLink || osmSearchUrl}
+            href={externalMapLink}
             target="_blank"
             rel="noopener noreferrer"
             className="absolute inset-0 flex items-end justify-end p-2 opacity-0 group-hover:opacity-100 transition-opacity"
@@ -107,7 +111,7 @@ export function MapEmbed({ address, mapsLink, className = '' }: MapEmbedProps) {
         </div>
       ) : (
         <a
-          href={mapsLink || osmSearchUrl}
+          href={externalMapLink}
           target="_blank"
           rel="noopener noreferrer"
           className="block relative group"
