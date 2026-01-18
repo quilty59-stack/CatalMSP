@@ -111,8 +111,8 @@ export default function MSPDetail() {
           </div>
 
           {msp.address && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div className="flex items-start gap-2 p-3 bg-muted rounded-lg text-sm">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 items-stretch">
+              <div className="flex items-start gap-2 p-3 bg-muted rounded-lg text-sm h-full">
                 <MapPin className="w-4 h-4 mt-0.5 text-muted-foreground shrink-0" />
                 <div className="flex-1">
                   <p className="text-foreground">{msp.address}</p>
