@@ -22,10 +22,29 @@ import {
   Building2,
   Loader2,
   Navigation,
-  X
+  X,
+  ImagePlus,
+  Flame,
+  User,
+  Wind,
+  Package
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+
+interface SetupPhoto {
+  category: string;
+  file: File;
+  preview: string;
+}
+
+const SETUP_CATEGORIES = [
+  { key: 'fumee', label: 'Machine à fumée', icon: Wind },
+  { key: 'mannequin', label: 'Mannequin', icon: User },
+  { key: 'feu', label: 'Dispositif feu/LED', icon: Flame },
+  { key: 'gaz', label: 'Bouteille de gaz', icon: Package },
+  { key: 'autre_prepa', label: 'Autre préparation', icon: ImagePlus },
+];
 
 export default function CreateMSP() {
   const navigate = useNavigate();
@@ -34,7 +53,10 @@ export default function CreateMSP() {
   const [isLocating, setIsLocating] = useState(false);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [setupPhotos, setSetupPhotos] = useState<SetupPhoto[]>([]);
+  const [activeSetupCategory, setActiveSetupCategory] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const setupFileInputRef = useRef<HTMLInputElement>(null);
   
   const [formData, setFormData] = useState({
     siteName: '',
@@ -68,6 +90,37 @@ export default function CreateMSP() {
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
+  };
+
+  const handleSetupPhotoCapture = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && activeSetupCategory) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setSetupPhotos(prev => [
+          ...prev.filter(p => p.category !== activeSetupCategory),
+          {
+            category: activeSetupCategory,
+            file,
+            preview: reader.result as string
+          }
+        ]);
+      };
+      reader.readAsDataURL(file);
+      setActiveSetupCategory(null);
+    }
+    if (setupFileInputRef.current) {
+      setupFileInputRef.current.value = '';
+    }
+  };
+
+  const removeSetupPhoto = (category: string) => {
+    setSetupPhotos(prev => prev.filter(p => p.category !== category));
+  };
+
+  const triggerSetupPhotoCapture = (category: string) => {
+    setActiveSetupCategory(category);
+    setTimeout(() => setupFileInputRef.current?.click(), 100);
   };
 
   const handleGeolocation = async () => {
@@ -131,18 +184,20 @@ export default function CreateMSP() {
     if (currentStep === 2) {
       return formData.siteName && formData.siteType && formData.commune;
     }
-    return formData.theme;
+    if (currentStep === 3) {
+      return formData.theme;
+    }
+    // Step 4: setup photos are optional
+    return true;
   };
 
-  const uploadPhoto = async (mspId: string): Promise<string | null> => {
-    if (!photoFile) return null;
-    
-    const fileExt = photoFile.name.split('.').pop();
-    const fileName = `${mspId}/entree-${Date.now()}.${fileExt}`;
+  const uploadPhoto = async (mspId: string, file: File, category: string): Promise<string | null> => {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${mspId}/${category}-${Date.now()}.${fileExt}`;
     
     const { data, error } = await supabase.storage
       .from('msp-photos')
-      .upload(fileName, photoFile);
+      .upload(fileName, file);
     
     if (error) {
       console.error('Photo upload error:', error);
@@ -238,15 +293,29 @@ export default function CreateMSP() {
           return;
         }
 
-        // Upload photo if available
+        // Upload main entrance photo
         if (photoFile && mspRecord) {
-          const photoUrl = await uploadPhoto(mspRecord.id);
+          const photoUrl = await uploadPhoto(mspRecord.id, photoFile, 'entree_principale');
           if (photoUrl) {
             await supabase.from('msp_photos').insert({
               msp_id: mspRecord.id,
               category: 'entree_principale',
               image_url: photoUrl,
             });
+          }
+        }
+
+        // Upload setup photos
+        if (mspRecord && setupPhotos.length > 0) {
+          for (const setupPhoto of setupPhotos) {
+            const photoUrl = await uploadPhoto(mspRecord.id, setupPhoto.file, setupPhoto.category);
+            if (photoUrl) {
+              await supabase.from('msp_photos').insert({
+                msp_id: mspRecord.id,
+                category: setupPhoto.category,
+                image_url: photoUrl,
+              });
+            }
           }
         }
 
@@ -449,8 +518,69 @@ export default function CreateMSP() {
                 Plus vous donnez de détails, plus la fiche générée sera adaptée.
               </p>
             </div>
+          </div>
+        );
 
-            <div className="mt-6 p-4 bg-primary/5 rounded-lg border border-primary/20">
+      case 4:
+        return (
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Documentez la mise en place de l'exercice. Ces photos aideront les formateurs à préparer le site.
+            </p>
+
+            <input
+              ref={setupFileInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              onChange={handleSetupPhotoCapture}
+              className="hidden"
+            />
+
+            <div className="grid grid-cols-2 gap-3">
+              {SETUP_CATEGORIES.map((cat) => {
+                const existingPhoto = setupPhotos.find(p => p.category === cat.key);
+                const Icon = cat.icon;
+                
+                return (
+                  <div key={cat.key} className="relative">
+                    {existingPhoto ? (
+                      <div className="relative rounded-xl overflow-hidden border border-border">
+                        <img 
+                          src={existingPhoto.preview} 
+                          alt={cat.label}
+                          className="w-full h-32 object-cover"
+                        />
+                        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-2">
+                          <span className="text-white text-xs font-medium">{cat.label}</span>
+                        </div>
+                        <Button
+                          variant="destructive"
+                          size="icon"
+                          className="absolute top-1 right-1 h-6 w-6"
+                          onClick={() => removeSetupPhoto(cat.key)}
+                        >
+                          <X className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => triggerSetupPhotoCapture(cat.key)}
+                        className="w-full h-32 rounded-xl border-2 border-dashed border-border hover:border-primary hover:bg-primary/5 transition-colors flex flex-col items-center justify-center gap-2 p-2"
+                      >
+                        <Icon className="w-6 h-6 text-muted-foreground" />
+                        <span className="text-xs text-muted-foreground text-center leading-tight">
+                          {cat.label}
+                        </span>
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="mt-4 p-4 bg-primary/5 rounded-lg border border-primary/20">
               <div className="flex items-start gap-3">
                 <Sparkles className="w-5 h-5 text-primary mt-0.5" />
                 <div>
@@ -474,6 +604,7 @@ export default function CreateMSP() {
     { id: 1, title: 'Photo', icon: Camera },
     { id: 2, title: 'Site', icon: Building2 },
     { id: 3, title: 'Scénario', icon: Sparkles },
+    { id: 4, title: 'Mise en place', icon: ImagePlus },
   ];
 
   return (
@@ -500,7 +631,7 @@ export default function CreateMSP() {
         </div>
 
         {/* Step indicators */}
-        <div className="flex items-center justify-center gap-2 mb-6">
+        <div className="flex items-center justify-center gap-1 mb-6">
           {steps.map((step, index) => {
             const Icon = step.icon;
             const isActive = currentStep === step.id;
@@ -509,7 +640,7 @@ export default function CreateMSP() {
             return (
               <div key={step.id} className="flex items-center">
                 <div
-                  className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
+                  className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${
                     isActive
                       ? 'gradient-hero text-white shadow-lg'
                       : isCompleted
@@ -518,14 +649,14 @@ export default function CreateMSP() {
                   }`}
                 >
                   {isCompleted ? (
-                    <Check className="w-5 h-5" />
+                    <Check className="w-4 h-4" />
                   ) : (
-                    <Icon className="w-5 h-5" />
+                    <Icon className="w-4 h-4" />
                   )}
                 </div>
                 {index < steps.length - 1 && (
                   <div
-                    className={`w-12 h-1 mx-1 rounded-full transition-colors ${
+                    className={`w-8 h-1 mx-0.5 rounded-full transition-colors ${
                       isCompleted ? 'bg-primary' : 'bg-muted'
                     }`}
                   />
