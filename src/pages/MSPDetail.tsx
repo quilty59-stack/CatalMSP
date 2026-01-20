@@ -6,6 +6,7 @@ import { DifficultyBadge } from '@/components/ui/DifficultyBadge';
 import { ThemeBadge } from '@/components/ui/ThemeBadge';
 import { Button } from '@/components/ui/button';
 import { MapEmbed } from '@/components/MapEmbed';
+import { MSPPhotoGallery } from '@/components/MSPPhotoGallery';
 import { 
   MapPin, 
   ExternalLink, 
@@ -360,6 +361,9 @@ export default function MSPDetail() {
             </p>
           )}
         </motion.div>
+
+        {/* Photos Gallery */}
+        <MSPPhotoGallery mspId={msp.id} />
 
         {/* Notes */}
         {msp.siteNotes && (
