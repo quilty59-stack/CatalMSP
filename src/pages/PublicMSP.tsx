@@ -66,8 +66,8 @@ export default function PublicMSP() {
       <header className="gradient-hero px-4 py-6">
         <div className="container max-w-2xl">
           <div className="flex items-center gap-2 mb-4">
-            <Shield className="w-6 h-6 text-primary-foreground/80" />
-            <span className="text-primary-foreground/80 text-sm font-medium">MSP Catalog</span>
+            <img src="/logo.png" alt="CatalMSP" className="w-8 h-8" />
+            <span className="text-primary-foreground/80 text-sm font-medium">CatalMSP</span>
           </div>
           <h1 className="font-display text-2xl font-bold text-primary-foreground mb-2">{msp.title}</h1>
           <p className="text-primary-foreground/80">{msp.siteName}</p>
