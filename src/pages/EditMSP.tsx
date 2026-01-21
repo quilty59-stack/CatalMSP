@@ -10,8 +10,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Loader2, Save, ArrowLeft, MapPin, Target, BookOpen, Users, AlertTriangle, Wrench, Camera } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { SITE_TYPES, THEMES, SiteType, Theme } from '@/types/msp';
+import { SITE_TYPES, THEMES, STATUSES, SiteType, Theme, Status } from '@/types/msp';
 import { PhotoManager } from '@/components/PhotoManager';
+import { CheckCircle, Clock, AlertCircle } from 'lucide-react';
 
 export default function EditMSP() {
   const { slug } = useParams();
@@ -27,6 +28,7 @@ export default function EditMSP() {
     address: '',
     mapsLink: '',
     theme: 'incendie' as Theme,
+    status: 'brouillon' as Status,
     competences: '',
     objectives: '',
     situation: '',
@@ -59,6 +61,7 @@ export default function EditMSP() {
         address: msp.address || '',
         mapsLink: msp.mapsLink || '',
         theme: msp.theme || 'incendie',
+        status: msp.status || 'brouillon',
         competences: msp.competences || '',
         objectives: msp.objectives || '',
         situation: msp.situation || '',
@@ -98,6 +101,7 @@ export default function EditMSP() {
           address: formData.address,
           maps_link: formData.mapsLink,
           theme: formData.theme,
+          status: formData.status,
           competences: formData.competences,
           objectives: formData.objectives,
           situation: formData.situation,
@@ -167,6 +171,46 @@ export default function EditMSP() {
           <h1 className="font-display text-xl font-bold text-foreground">
             Modifier la fiche
           </h1>
+        </motion.div>
+
+        {/* Status Selector */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.05 }}
+          className="form-section"
+        >
+          <h2 className="form-section-title">
+            <CheckCircle className="w-5 h-5 text-primary" />
+            Statut de validation
+          </h2>
+          
+          <div className="grid grid-cols-3 gap-2">
+            {(Object.entries(STATUSES) as [Status, string][]).map(([key, label]) => {
+              const getIcon = () => {
+                if (key === 'brouillon') return <Clock className="w-4 h-4" />;
+                if (key === 'validee') return <CheckCircle className="w-4 h-4" />;
+                return <AlertCircle className="w-4 h-4" />;
+              };
+              const getColors = () => {
+                if (formData.status !== key) return 'bg-muted text-muted-foreground hover:bg-muted/80';
+                if (key === 'brouillon') return 'bg-muted-foreground text-white';
+                if (key === 'validee') return 'bg-success text-white';
+                return 'bg-warning text-white';
+              };
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setFormData({ ...formData, status: key })}
+                  className={`flex items-center justify-center gap-2 p-3 rounded-lg text-sm font-medium transition-colors ${getColors()}`}
+                >
+                  {getIcon()}
+                  {label}
+                </button>
+              );
+            })}
+          </div>
         </motion.div>
 
         {/* Site Info */}
