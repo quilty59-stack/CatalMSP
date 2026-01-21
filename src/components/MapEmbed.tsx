@@ -4,6 +4,8 @@ import { ExternalLink, MapPin, Loader2 } from 'lucide-react';
 interface MapEmbedProps {
   address: string;
   mapsLink?: string;
+  latitude?: number;
+  longitude?: number;
   className?: string;
 }
 
@@ -12,17 +14,26 @@ interface Coordinates {
   lon: number;
 }
 
-export function MapEmbed({ address, mapsLink, className = '' }: MapEmbedProps) {
-  const [coordinates, setCoordinates] = useState<Coordinates | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+export function MapEmbed({ address, mapsLink, latitude, longitude, className = '' }: MapEmbedProps) {
+  const [coordinates, setCoordinates] = useState<Coordinates | null>(
+    latitude && longitude ? { lat: latitude, lon: longitude } : null
+  );
+  const [isLoading, setIsLoading] = useState(!latitude || !longitude);
   const [error, setError] = useState(false);
   
   // Encode address for OpenStreetMap search
   const encodedAddress = encodeURIComponent(address);
   const osmSearchUrl = `https://www.openstreetmap.org/search?query=${encodedAddress}`;
 
-  // Geocode the address using Nominatim
+  // Geocode the address using Nominatim (only if no coords provided)
   useEffect(() => {
+    // Skip geocoding if we already have coordinates
+    if (latitude && longitude) {
+      setCoordinates({ lat: latitude, lon: longitude });
+      setIsLoading(false);
+      return;
+    }
+
     const geocodeAddress = async () => {
       setIsLoading(true);
       setError(false);
@@ -60,7 +71,7 @@ export function MapEmbed({ address, mapsLink, className = '' }: MapEmbedProps) {
     if (address) {
       geocodeAddress();
     }
-  }, [address, encodedAddress]);
+  }, [address, encodedAddress, latitude, longitude]);
 
   // Create OpenStreetMap embed URL with coordinates - zoomed in for street-level view
   const getMapEmbedUrl = () => {
