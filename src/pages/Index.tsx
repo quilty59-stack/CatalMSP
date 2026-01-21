@@ -1,10 +1,12 @@
+import { useState, useEffect } from 'react';
 import { Layout } from '@/components/Layout';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { FolderOpen, Plus, QrCode, Search, Flame, ChevronRight, Shield } from 'lucide-react';
+import { FolderOpen, Plus, QrCode, Search, ChevronRight, Shield, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { mockMspData } from '@/data/mockMsp';
 import { MSPCard } from '@/components/MSPCard';
+import { MSP, Theme, Status } from '@/types/msp';
+import { supabase } from '@/integrations/supabase/client';
 
 const quickActions = [
   {
@@ -32,9 +34,73 @@ const quickActions = [
 ];
 
 const Index = () => {
-  const recentMsp = mockMspData.slice(0, 3);
-  const totalMsp = mockMspData.length;
-  const validatedMsp = mockMspData.filter(m => m.status === 'validee').length;
+  const [mspList, setMspList] = useState<MSP[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    loadMspFromDatabase();
+  }, []);
+
+  const loadMspFromDatabase = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('msp')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error loading MSP:', error);
+        return;
+      }
+
+      if (data) {
+        const transformed: MSP[] = data.map((record) => ({
+          id: record.id,
+          slug: record.slug,
+          title: record.title,
+          theme: record.theme as Theme,
+          status: record.status as Status,
+          difficulty: record.difficulty as 1 | 2 | 3,
+          siteName: record.site_name,
+          siteType: record.site_type as any,
+          commune: record.commune,
+          address: record.address || '',
+          mapsLink: record.maps_link || '',
+          siteNotes: record.site_notes || '',
+          competences: record.competences || '',
+          objectives: record.objectives || '',
+          situation: record.situation || '',
+          missionReason: record.mission_reason || '',
+          difficultyFacilitator: record.difficulty_facilitator || '',
+          difficultyInitial: record.difficulty_initial || '',
+          difficultyComplex: record.difficulty_complex || '',
+          instructions: record.instructions || '',
+          expectedActivities: record.expected_activities || '',
+          cognitiveEffects: record.cognitive_effects || '',
+          reservationDetails: record.reservation_details || '',
+          hasWaterPoint: record.has_water_point || false,
+          waterPointDetails: record.water_point_details || '',
+          authorizations: record.authorizations || '',
+          constraints: record.constraints || '',
+          safetyBriefing: record.safety_briefing || '',
+          equipment: record.equipment || [],
+          otherEquipment: record.other_equipment || '',
+          photos: [],
+          createdAt: record.created_at,
+          updatedAt: record.updated_at,
+        }));
+        setMspList(transformed);
+      }
+    } catch (err) {
+      console.error('Unexpected error:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const recentMsp = mspList.slice(0, 3);
+  const totalMsp = mspList.length;
+  const validatedMsp = mspList.filter(m => m.status === 'validee').length;
 
   return (
     <Layout>
@@ -150,9 +216,24 @@ const Index = () => {
             </Link>
           </div>
           <div className="space-y-3">
-            {recentMsp.map((msp, index) => (
-              <MSPCard key={msp.id} msp={msp} index={index} />
-            ))}
+            {isLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="w-5 h-5 animate-spin text-primary" />
+              </div>
+            ) : recentMsp.length > 0 ? (
+              recentMsp.map((msp, index) => (
+                <MSPCard key={msp.id} msp={msp} index={index} />
+              ))
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <p>Aucune fiche MSP créée</p>
+                <Link to="/creer">
+                  <Button variant="link" className="mt-2">
+                    Créer votre première fiche
+                  </Button>
+                </Link>
+              </div>
+            )}
           </div>
         </motion.section>
       </div>
