@@ -39,6 +39,7 @@ export type Database = {
           public_url: string | null
           reservation_details: string | null
           safety_briefing: string | null
+          site_conventionne_id: string | null
           site_name: string
           site_notes: string | null
           site_type: string
@@ -74,6 +75,7 @@ export type Database = {
           public_url?: string | null
           reservation_details?: string | null
           safety_briefing?: string | null
+          site_conventionne_id?: string | null
           site_name: string
           site_notes?: string | null
           site_type: string
@@ -109,6 +111,7 @@ export type Database = {
           public_url?: string | null
           reservation_details?: string | null
           safety_briefing?: string | null
+          site_conventionne_id?: string | null
           site_name?: string
           site_notes?: string | null
           site_type?: string
@@ -120,7 +123,15 @@ export type Database = {
           updated_at?: string
           water_point_details?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "msp_site_conventionne_id_fkey"
+            columns: ["site_conventionne_id"]
+            isOneToOne: false
+            referencedRelation: "sites_conventionnes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       msp_photos: {
         Row: {
@@ -156,6 +167,78 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      sites_conventionnes: {
+        Row: {
+          address: string
+          commune: string
+          contact_email: string | null
+          contact_name: string | null
+          contact_phone: string | null
+          convention_expires_at: string | null
+          convention_notes: string | null
+          convention_signed_at: string | null
+          created_at: string
+          domains: string[] | null
+          id: string
+          latitude: number | null
+          longitude: number | null
+          name: string
+          notes: string | null
+          opening_hours: string | null
+          photo_url: string | null
+          postal_code: string | null
+          site_type: string
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          address: string
+          commune: string
+          contact_email?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          convention_expires_at?: string | null
+          convention_notes?: string | null
+          convention_signed_at?: string | null
+          created_at?: string
+          domains?: string[] | null
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          name: string
+          notes?: string | null
+          opening_hours?: string | null
+          photo_url?: string | null
+          postal_code?: string | null
+          site_type?: string
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string
+          commune?: string
+          contact_email?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          convention_expires_at?: string | null
+          convention_notes?: string | null
+          convention_signed_at?: string | null
+          created_at?: string
+          domains?: string[] | null
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          name?: string
+          notes?: string | null
+          opening_hours?: string | null
+          photo_url?: string | null
+          postal_code?: string | null
+          site_type?: string
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
     }
     Views: {

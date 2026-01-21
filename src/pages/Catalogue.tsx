@@ -3,6 +3,7 @@ import { Layout } from '@/components/Layout';
 import { MSPCard } from '@/components/MSPCard';
 import { mockMspData } from '@/data/mockMsp';
 import { Theme, Status, THEMES, STATUSES, MSP } from '@/types/msp';
+import { DOMAINS } from '@/types/site';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Search, Filter, X, Loader2 } from 'lucide-react';
@@ -13,6 +14,8 @@ export default function Catalogue() {
   const [search, setSearch] = useState('');
   const [themeFilter, setThemeFilter] = useState<Theme | null>(null);
   const [statusFilter, setStatusFilter] = useState<Status | null>(null);
+  const [domainFilter, setDomainFilter] = useState<string | null>(null);
+  const [communeFilter, setCommuneFilter] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
   const [dbMspList, setDbMspList] = useState<MSP[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -84,6 +87,12 @@ export default function Catalogue() {
     return [...dbMspList, ...mockMspData];
   }, [dbMspList]);
 
+  // Get unique communes from MSPs
+  const communes = useMemo(() => {
+    const uniqueCommunes = [...new Set(allMspData.map(m => m.commune))].sort();
+    return uniqueCommunes;
+  }, [allMspData]);
+
   const filteredMsp = useMemo(() => {
     return allMspData.filter((msp) => {
       const searchLower = search.toLowerCase();
@@ -94,18 +103,27 @@ export default function Catalogue() {
 
       const matchesTheme = !themeFilter || msp.theme === themeFilter;
       const matchesStatus = !statusFilter || msp.status === statusFilter;
+      const matchesCommune = !communeFilter || msp.commune === communeFilter;
+      // Domain filter would need to match theme for now (incendie, secours, etc.)
+      const matchesDomain = !domainFilter || 
+        (domainFilter === 'Incendie' && msp.theme === 'incendie') ||
+        (domainFilter === 'Secours' && msp.theme === 'secours') ||
+        (domainFilter === 'Risques chimiques' && msp.theme === 'chimique') ||
+        (domainFilter === 'Risques industriels' && msp.theme === 'gaz');
 
-      return matchesSearch && matchesTheme && matchesStatus;
+      return matchesSearch && matchesTheme && matchesStatus && matchesCommune && matchesDomain;
     });
-  }, [search, themeFilter, statusFilter, allMspData]);
+  }, [search, themeFilter, statusFilter, communeFilter, domainFilter, allMspData]);
 
   const clearFilters = () => {
     setThemeFilter(null);
     setStatusFilter(null);
+    setDomainFilter(null);
+    setCommuneFilter(null);
     setSearch('');
   };
 
-  const hasActiveFilters = themeFilter || statusFilter || search;
+  const hasActiveFilters = themeFilter || statusFilter || domainFilter || communeFilter || search;
 
   return (
     <Layout>
@@ -153,6 +171,42 @@ export default function Catalogue() {
                       onClick={() => setThemeFilter(themeFilter === theme ? null : theme)}
                     >
                       {THEMES[theme]}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-foreground mb-2 block">
+                  Domaine
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {DOMAINS.slice(0, 4).map((domain) => (
+                    <Button
+                      key={domain}
+                      variant={domainFilter === domain ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setDomainFilter(domainFilter === domain ? null : domain)}
+                    >
+                      {domain}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-foreground mb-2 block">
+                  Commune
+                </label>
+                <div className="flex flex-wrap gap-2 max-h-24 overflow-y-auto">
+                  {communes.slice(0, 10).map((commune) => (
+                    <Button
+                      key={commune}
+                      variant={communeFilter === commune ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setCommuneFilter(communeFilter === commune ? null : commune)}
+                    >
+                      {commune}
                     </Button>
                   ))}
                 </div>

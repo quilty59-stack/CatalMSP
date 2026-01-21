@@ -1,11 +1,12 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Home, FolderOpen, Plus, QrCode } from 'lucide-react';
+import { Home, FolderOpen, Plus, QrCode, Building2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navItems = [
   { icon: Home, label: 'Accueil', path: '/' },
-  { icon: FolderOpen, label: 'Catalogue', path: '/catalogue' },
+  { icon: FolderOpen, label: 'MSP', path: '/catalogue' },
   { icon: Plus, label: 'Créer', path: '/creer', accent: true },
+  { icon: Building2, label: 'Sites', path: '/sites' },
   { icon: QrCode, label: 'Scanner', path: '/scanner' },
 ];
 
