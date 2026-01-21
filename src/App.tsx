@@ -13,6 +13,7 @@ import Scanner from "./pages/Scanner";
 import Sites from "./pages/Sites";
 import SiteDetail from "./pages/SiteDetail";
 import CreateSite from "./pages/CreateSite";
+import EditSite from "./pages/EditSite";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -34,6 +35,7 @@ const App = () => (
           <Route path="/sites" element={<Sites />} />
           <Route path="/sites/nouveau" element={<CreateSite />} />
           <Route path="/sites/:slug" element={<SiteDetail />} />
+          <Route path="/sites/:slug/edit" element={<EditSite />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
