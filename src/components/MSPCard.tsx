@@ -26,17 +26,47 @@ interface MSPCardProps {
 }
 
 export function MSPCard({ msp, index = 0, onDelete, showDeleteButton = false }: MSPCardProps) {
-  const handleDelete = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-  };
-
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: index * 0.05 }}
+      className="relative"
     >
+      {/* Delete button positioned absolutely outside the link */}
+      {showDeleteButton && onDelete && (
+        <div className="absolute top-3 right-3 z-10">
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                variant="destructive"
+                size="icon"
+                className="h-8 w-8"
+              >
+                <Trash2 className="w-4 h-4" />
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Supprimer cette MSP ?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Cette action est irréversible. La fiche "{msp.title}" sera définitivement supprimée.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Annuler</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() => onDelete(msp.id)}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  Supprimer
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
+      )}
+
       <Link to={`/msp/${msp.slug}`}>
         <div className="card-interactive p-4 space-y-3">
           <div className="flex items-start justify-between gap-3">
@@ -48,42 +78,8 @@ export function MSPCard({ msp, index = 0, onDelete, showDeleteButton = false }: 
                 {msp.siteName}
               </p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className={`flex items-center gap-2 ${showDeleteButton ? 'mr-10' : ''}`}>
               <DifficultyBadge level={msp.difficulty} />
-              {showDeleteButton && onDelete && (
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                      onClick={handleDelete}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent onClick={(e) => e.stopPropagation()}>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Supprimer cette MSP ?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Cette action est irréversible. La fiche "{msp.title}" sera définitivement supprimée.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Annuler</AlertDialogCancel>
-                      <AlertDialogAction
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onDelete(msp.id);
-                        }}
-                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                      >
-                        Supprimer
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              )}
             </div>
           </div>
 
