@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Layout } from '@/components/Layout';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,8 @@ import {
   SITE_TYPES, 
   THEMES,
 } from '@/types/msp';
+import { SiteConventionne } from '@/types/site';
+import { useSitesByCommune } from '@/hooks/useSites';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Camera,
@@ -27,7 +29,8 @@ import {
   Flame,
   User,
   Wind,
-  Package
+  Package,
+  MapPinned
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -55,6 +58,8 @@ export default function CreateMSP() {
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [setupPhotos, setSetupPhotos] = useState<SetupPhoto[]>([]);
   const [activeSetupCategory, setActiveSetupCategory] = useState<string | null>(null);
+  const [showSiteSuggestions, setShowSiteSuggestions] = useState(false);
+  const [selectedSite, setSelectedSite] = useState<SiteConventionne | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const setupFileInputRef = useRef<HTMLInputElement>(null);
   
@@ -66,10 +71,60 @@ export default function CreateMSP() {
     mapsLink: '',
     theme: 'incendie' as Theme,
     briefDescription: '',
+    siteConventionneId: '' as string,
   });
+
+  // Fetch sites matching the commune
+  const { sites: matchingSites, isLoading: isLoadingSites } = useSitesByCommune(formData.commune);
 
   const updateField = (field: string, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+    
+    // Show suggestions when commune changes and has content
+    if (field === 'commune' && value.length >= 2) {
+      setShowSiteSuggestions(true);
+    } else if (field === 'commune' && value.length < 2) {
+      setShowSiteSuggestions(false);
+    }
+  };
+
+  // Handle site selection from suggestions
+  const handleSelectSite = (site: SiteConventionne) => {
+    setSelectedSite(site);
+    setShowSiteSuggestions(false);
+    
+    // Map site type to MSP site type if compatible
+    const siteTypeMap: Record<string, SiteType> = {
+      'industriel': 'industriel',
+      'erp': 'erp',
+      'habitation': 'habitation',
+      'chantier': 'chantier',
+      'exterieur': 'exterieur',
+    };
+    
+    // Pre-fill form data from the selected site
+    setFormData(prev => ({
+      ...prev,
+      siteName: site.name,
+      siteType: (siteTypeMap[site.siteType] || prev.siteType) as SiteType | '',
+      commune: site.commune,
+      address: site.address,
+      mapsLink: site.latitude && site.longitude 
+        ? `https://www.google.com/maps?q=${site.latitude},${site.longitude}` 
+        : prev.mapsLink,
+      siteConventionneId: site.id,
+    }));
+    
+    toast.success(`Site "${site.name}" sélectionné`);
+  };
+
+  // Clear selected site
+  const handleClearSelectedSite = () => {
+    setSelectedSite(null);
+    setFormData(prev => ({
+      ...prev,
+      siteConventionneId: '',
+    }));
   };
 
   const handlePhotoCapture = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -279,6 +334,7 @@ export default function CreateMSP() {
           constraints: mspContent.constraints,
           safety_briefing: mspContent.safetyBriefing,
           equipment: mspContent.equipment || [],
+          site_conventionne_id: formData.siteConventionneId || null,
         };
 
         const { data: mspRecord, error: insertError } = await supabase
@@ -435,14 +491,78 @@ export default function CreateMSP() {
               </div>
             </div>
 
-            <div className="space-y-2">
+            {/* Site conventionné sélectionné */}
+            {selectedSite && (
+              <div className="p-3 rounded-lg bg-primary/10 border border-primary/20">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-start gap-2">
+                    <MapPinned className="w-4 h-4 text-primary mt-0.5" />
+                    <div>
+                      <p className="text-sm font-medium text-primary">{selectedSite.name}</p>
+                      <p className="text-xs text-muted-foreground">{selectedSite.commune} - Site conventionné</p>
+                    </div>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6"
+                    onClick={handleClearSelectedSite}
+                  >
+                    <X className="w-3 h-3" />
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-2 relative">
               <Label htmlFor="commune">Commune *</Label>
               <Input
                 id="commune"
                 placeholder="Ex: Montpellier"
                 value={formData.commune}
                 onChange={(e) => updateField('commune', e.target.value)}
+                onFocus={() => formData.commune.length >= 2 && setShowSiteSuggestions(true)}
               />
+              
+              {/* Sites conventionnés suggestions dropdown */}
+              {showSiteSuggestions && matchingSites.length > 0 && (
+                <div className="absolute z-50 w-full mt-1 bg-card border border-border rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                  <div className="p-2 border-b border-border bg-muted/50">
+                    <p className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+                      <MapPinned className="w-3 h-3" />
+                      Sites conventionnés disponibles
+                    </p>
+                  </div>
+                  {matchingSites.map((site) => (
+                    <button
+                      key={site.id}
+                      type="button"
+                      className="w-full text-left p-3 hover:bg-muted/50 border-b border-border last:border-b-0 transition-colors"
+                      onClick={() => handleSelectSite(site)}
+                    >
+                      <p className="text-sm font-medium">{site.name}</p>
+                      <p className="text-xs text-muted-foreground">{site.address}, {site.commune}</p>
+                      {site.domains.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {site.domains.slice(0, 2).map((domain) => (
+                            <span key={domain} className="text-xs px-1.5 py-0.5 rounded bg-primary/10 text-primary">
+                              {domain}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
+              
+              {/* Loading indicator */}
+              {isLoadingSites && formData.commune.length >= 2 && (
+                <div className="absolute right-3 top-8">
+                  <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                </div>
+              )}
             </div>
 
             <div className="space-y-2">
