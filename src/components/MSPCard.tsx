@@ -2,16 +2,35 @@ import { MSP, SITE_TYPES } from '@/types/msp';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { DifficultyBadge } from '@/components/ui/DifficultyBadge';
 import { ThemeBadge } from '@/components/ui/ThemeBadge';
-import { MapPin, Calendar } from 'lucide-react';
+import { MapPin, Calendar, Trash2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 interface MSPCardProps {
   msp: MSP;
   index?: number;
+  onDelete?: (id: string) => void;
+  showDeleteButton?: boolean;
 }
 
-export function MSPCard({ msp, index = 0 }: MSPCardProps) {
+export function MSPCard({ msp, index = 0, onDelete, showDeleteButton = false }: MSPCardProps) {
+  const handleDelete = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -29,7 +48,43 @@ export function MSPCard({ msp, index = 0 }: MSPCardProps) {
                 {msp.siteName}
               </p>
             </div>
-            <DifficultyBadge level={msp.difficulty} />
+            <div className="flex items-center gap-2">
+              <DifficultyBadge level={msp.difficulty} />
+              {showDeleteButton && onDelete && (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                      onClick={handleDelete}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Supprimer cette MSP ?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Cette action est irréversible. La fiche "{msp.title}" sera définitivement supprimée.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Annuler</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onDelete(msp.id);
+                        }}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      >
+                        Supprimer
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              )}
+            </div>
           </div>
 
           <div className="flex items-center gap-2 text-sm text-muted-foreground">

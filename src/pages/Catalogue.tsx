@@ -6,9 +6,12 @@ import { Theme, Status, THEMES, STATUSES, MSP } from '@/types/msp';
 import { DOMAINS } from '@/types/site';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search, Filter, X, Loader2 } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { Search, Filter, X, Loader2, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 export default function Catalogue() {
   const [search, setSearch] = useState('');
@@ -19,6 +22,7 @@ export default function Catalogue() {
   const [showFilters, setShowFilters] = useState(false);
   const [dbMspList, setDbMspList] = useState<MSP[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [editMode, setEditMode] = useState(false);
 
   useEffect(() => {
     loadMspFromDatabase();
@@ -82,6 +86,35 @@ export default function Catalogue() {
     }
   };
 
+  const handleDeleteMsp = async (id: string) => {
+    try {
+      // First delete associated photos
+      await supabase
+        .from('msp_photos')
+        .delete()
+        .eq('msp_id', id);
+
+      // Then delete the MSP
+      const { error } = await supabase
+        .from('msp')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        console.error('Error deleting MSP:', error);
+        toast.error('Erreur lors de la suppression');
+        return;
+      }
+
+      // Update local state
+      setDbMspList(prev => prev.filter(m => m.id !== id));
+      toast.success('MSP supprimée avec succès');
+    } catch (err) {
+      console.error('Unexpected error:', err);
+      toast.error('Erreur inattendue');
+    }
+  };
+
   // Combine mock data with database data
   const allMspData = useMemo(() => {
     return [...dbMspList, ...mockMspData];
@@ -128,6 +161,22 @@ export default function Catalogue() {
   return (
     <Layout>
       <div className="px-4 py-4 space-y-4">
+        {/* Header with Edit Mode Toggle */}
+        <div className="flex items-center justify-between">
+          <h1 className="text-xl font-bold text-foreground">Catalogue MSP</h1>
+          <div className="flex items-center gap-2">
+            <Label htmlFor="edit-mode" className="text-sm text-muted-foreground flex items-center gap-1.5">
+              <Trash2 className="w-4 h-4" />
+              Mode édition
+            </Label>
+            <Switch
+              id="edit-mode"
+              checked={editMode}
+              onCheckedChange={setEditMode}
+            />
+          </div>
+        </div>
+
         {/* Search and Filter */}
         <div className="flex gap-2">
           <div className="relative flex-1">
@@ -259,7 +308,13 @@ export default function Catalogue() {
             </div>
           ) : filteredMsp.length > 0 ? (
             filteredMsp.map((msp, index) => (
-              <MSPCard key={msp.id} msp={msp} index={index} />
+              <MSPCard 
+                key={msp.id} 
+                msp={msp} 
+                index={index} 
+                showDeleteButton={editMode}
+                onDelete={handleDeleteMsp}
+              />
             ))
           ) : (
             <motion.div
