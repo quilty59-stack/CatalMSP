@@ -1,6 +1,7 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Flame, ChevronLeft } from 'lucide-react';
+import { ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import logo from '@/assets/logo.png';
 
 interface HeaderProps {
   title?: string;
@@ -24,11 +25,9 @@ export function Header({ title, showBack = false, backTo = '/' }: HeaderProps) {
           </Link>
         ) : (
           <Link to="/" className="flex items-center gap-2">
-            <div className="w-9 h-9 gradient-hero rounded-lg flex items-center justify-center">
-              <Flame className="w-5 h-5 text-primary-foreground" />
-            </div>
+            <img src={logo} alt="CatalMSP" className="w-10 h-10" />
             <span className="font-display font-bold text-lg text-foreground">
-              MSP Catalog
+              CatalMSP
             </span>
           </Link>
         )}
