@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
-import { Layout } from '@/components/Layout';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { FolderOpen, Plus, QrCode, Search, ChevronRight, Shield, Loader2 } from 'lucide-react';
+import { FolderOpen, Plus, QrCode, Search, ChevronRight, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { MSPCard } from '@/components/MSPCard';
 import { MSP, Theme, Status } from '@/types/msp';
 import { supabase } from '@/integrations/supabase/client';
+import { BottomNav } from '@/components/BottomNav';
+import logo from '@/assets/logo.png';
 
 const quickActions = [
   {
@@ -103,23 +104,37 @@ const Index = () => {
   const validatedMsp = mspList.filter(m => m.status === 'validee').length;
 
   return (
-    <Layout>
-      {/* Hero Section */}
-      <section className="gradient-hero px-4 pt-6 pb-10">
+    <div className="min-h-screen bg-background">
+      {/* Hero Section - Full width, no header */}
+      <section className="hero-gradient px-4 pt-12 pb-14">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
-          className="text-center text-primary-foreground"
+          className="text-center"
         >
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-primary-foreground/20 rounded-2xl mb-4">
-            <Shield className="w-8 h-8" />
-          </div>
-          <h1 className="font-display text-2xl font-bold mb-2">
-            Catalogue MSP
+          {/* Logo centered */}
+          <motion.div 
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.5, type: "spring" }}
+            className="mb-4"
+          >
+            <img 
+              src={logo} 
+              alt="CatalMSP" 
+              className="w-28 h-28 mx-auto drop-shadow-lg"
+            />
+          </motion.div>
+          
+          <h1 className="font-display text-2xl font-bold text-white mb-1">
+            CatalMSP
           </h1>
-          <p className="text-primary-foreground/80 text-sm max-w-xs mx-auto">
-            Créez et partagez vos Mises en Situation Professionnelle
+          <p className="text-white/80 text-sm max-w-xs mx-auto">
+            Catalogue de Sites Conventionnés
+          </p>
+          <p className="text-white/60 text-xs mt-1">
+            Maisons de Santé Pluriprofessionnelles
           </p>
         </motion.div>
 
@@ -128,25 +143,25 @@ const Index = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.1 }}
-          className="flex justify-center gap-8 mt-6"
+          className="flex justify-center gap-10 mt-8"
         >
           <div className="text-center">
-            <div className="text-3xl font-display font-bold text-primary-foreground">
+            <div className="text-4xl font-display font-bold text-white">
               {totalMsp}
             </div>
-            <div className="text-xs text-primary-foreground/70">Fiches MSP</div>
+            <div className="text-xs text-white/70 uppercase tracking-wide mt-1">Fiches MSP</div>
           </div>
-          <div className="w-px bg-primary-foreground/20" />
+          <div className="w-px bg-white/20 h-12 self-center" />
           <div className="text-center">
-            <div className="text-3xl font-display font-bold text-primary-foreground">
+            <div className="text-4xl font-display font-bold text-white">
               {validatedMsp}
             </div>
-            <div className="text-xs text-primary-foreground/70">Validées</div>
+            <div className="text-xs text-white/70 uppercase tracking-wide mt-1">Validées</div>
           </div>
         </motion.div>
       </section>
 
-      <div className="px-4 -mt-6 space-y-6">
+      <div className="px-4 -mt-6 space-y-6 pb-24">
         {/* Search Bar */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -154,9 +169,11 @@ const Index = () => {
           transition={{ duration: 0.3, delay: 0.15 }}
         >
           <Link to="/catalogue">
-            <div className="card-elevated p-3 flex items-center gap-3">
-              <Search className="w-5 h-5 text-muted-foreground" />
-              <span className="text-muted-foreground text-sm">
+            <div className="card-elevated p-4 flex items-center gap-3 hover:shadow-lg transition-shadow">
+              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                <Search className="w-5 h-5 text-primary" />
+              </div>
+              <span className="text-muted-foreground">
                 Rechercher par site, thème, commune...
               </span>
             </div>
@@ -170,20 +187,20 @@ const Index = () => {
           transition={{ duration: 0.3, delay: 0.2 }}
           className="space-y-3"
         >
-          {quickActions.map((action, index) => {
+          {quickActions.map((action) => {
             const Icon = action.icon;
             return (
               <Link key={action.path} to={action.path}>
                 <motion.div
                   whileTap={{ scale: 0.98 }}
                   className={`card-interactive p-4 flex items-center gap-4 ${
-                    action.featured ? 'ring-2 ring-primary/20' : ''
+                    action.featured ? 'ring-2 ring-primary/30 bg-primary/5' : ''
                   }`}
                 >
-                  <div className={`w-12 h-12 ${action.color} rounded-xl flex items-center justify-center`}>
+                  <div className={`w-12 h-12 ${action.color} rounded-xl flex items-center justify-center shadow-md`}>
                     <Icon className={`w-6 h-6 ${
                       action.featured || action.color === 'bg-secondary' 
-                        ? 'text-primary-foreground' 
+                        ? 'text-white' 
                         : 'text-accent-foreground'
                     }`} />
                   </div>
@@ -204,12 +221,12 @@ const Index = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.3 }}
         >
-          <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center justify-between mb-4">
             <h2 className="font-display font-semibold text-lg text-foreground">
               Fiches récentes
             </h2>
             <Link to="/catalogue">
-              <Button variant="ghost" size="sm" className="text-primary gap-1">
+              <Button variant="ghost" size="sm" className="text-primary gap-1 hover:bg-primary/10">
                 Tout voir
                 <ChevronRight className="w-4 h-4" />
               </Button>
@@ -217,18 +234,22 @@ const Index = () => {
           </div>
           <div className="space-y-3">
             {isLoading ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="w-5 h-5 animate-spin text-primary" />
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="w-6 h-6 animate-spin text-primary" />
               </div>
             ) : recentMsp.length > 0 ? (
               recentMsp.map((msp, index) => (
                 <MSPCard key={msp.id} msp={msp} index={index} />
               ))
             ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                <p>Aucune fiche MSP créée</p>
+              <div className="text-center py-12 card-elevated rounded-xl">
+                <div className="w-16 h-16 rounded-full bg-muted mx-auto mb-4 flex items-center justify-center">
+                  <FolderOpen className="w-8 h-8 text-muted-foreground" />
+                </div>
+                <p className="text-muted-foreground mb-3">Aucune fiche MSP créée</p>
                 <Link to="/creer">
-                  <Button variant="link" className="mt-2">
+                  <Button className="gap-2">
+                    <Plus className="w-4 h-4" />
                     Créer votre première fiche
                   </Button>
                 </Link>
@@ -237,7 +258,9 @@ const Index = () => {
           </div>
         </motion.section>
       </div>
-    </Layout>
+
+      <BottomNav />
+    </div>
   );
 };
 
