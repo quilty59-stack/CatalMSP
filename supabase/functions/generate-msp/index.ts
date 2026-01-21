@@ -23,10 +23,13 @@ serve(async (req) => {
     const systemPrompt = `Tu es un expert en formation sapeur-pompier spécialisé dans la création de Mises en Situation Professionnelle (MSP). 
 Tu dois générer une fiche MSP complète et détaillée basée sur les informations minimales fournies.
 
+IMPORTANT: Le titre doit être SIMPLE et COURT (4-8 mots max). Pas de préfixes comme "Opération de Secours :", "Opération X :", "Prise en charge de...". Juste une description directe du scénario.
+Exemples de bons titres: "Feu de chambre en pavillon", "Malaise en milieu scolaire", "Chute sur chantier"
+
 Réponds UNIQUEMENT avec un JSON valide, sans markdown, sans explication. Le JSON doit suivre exactement cette structure:
 
 {
-  "title": "Titre accrocheur de la MSP",
+  "title": "Titre simple et direct (4-8 mots)",
   "competences": "Compétences visées (reconnaissance, attaque, sauvetage, etc.)",
   "objectives": "Objectifs pédagogiques détaillés",
   "situation": "Scénario détaillé de la mise en situation",
