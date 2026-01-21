@@ -1,7 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Layout } from '@/components/Layout';
 import { MSPCard } from '@/components/MSPCard';
-import { mockMspData } from '@/data/mockMsp';
 import { Theme, Status, THEMES, STATUSES, MSP } from '@/types/msp';
 import { DOMAINS } from '@/types/site';
 import { Input } from '@/components/ui/input';
@@ -24,7 +23,6 @@ export default function Catalogue() {
   const [dbMspList, setDbMspList] = useState<MSP[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [editMode, setEditMode] = useState(false);
-  const [showExamples, setShowExamples] = useState(false);
 
   useEffect(() => {
     loadMspFromDatabase();
@@ -123,15 +121,8 @@ export default function Catalogue() {
     }
   };
 
-  // Combine mock data with database data
-  const allMspData = useMemo(() => {
-    // Les MSP "du début" proviennent d'exemples (mock) : on les masque par défaut
-    // et on ne les affiche jamais en mode édition (suppression).
-    if (editMode) return dbMspList;
-    return showExamples ? [...dbMspList, ...mockMspData] : dbMspList;
-  }, [dbMspList, editMode, showExamples]);
-
-  const dbIdSet = useMemo(() => new Set(dbMspList.map((m) => m.id)), [dbMspList]);
+  // All MSP data from database only
+  const allMspData = useMemo(() => dbMspList, [dbMspList]);
 
   // Get unique communes from MSPs
   const communes = useMemo(() => {
@@ -177,30 +168,16 @@ export default function Catalogue() {
         {/* Header with Edit Mode Toggle */}
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-bold text-foreground">Catalogue MSP</h1>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <Label htmlFor="show-examples" className="text-sm text-muted-foreground">
-                Exemples
-              </Label>
-              <Switch
-                id="show-examples"
-                checked={showExamples}
-                onCheckedChange={setShowExamples}
-                disabled={editMode}
-              />
-            </div>
-
-            <div className="flex items-center gap-2">
-              <Label htmlFor="edit-mode" className="text-sm text-muted-foreground flex items-center gap-1.5">
-                <Trash2 className="w-4 h-4" />
-                Mode édition
-              </Label>
-              <Switch
-                id="edit-mode"
-                checked={editMode}
-                onCheckedChange={setEditMode}
-              />
-            </div>
+          <div className="flex items-center gap-2">
+            <Label htmlFor="edit-mode" className="text-sm text-muted-foreground flex items-center gap-1.5">
+              <Trash2 className="w-4 h-4" />
+              Mode édition
+            </Label>
+            <Switch
+              id="edit-mode"
+              checked={editMode}
+              onCheckedChange={setEditMode}
+            />
           </div>
         </div>
 
@@ -339,7 +316,7 @@ export default function Catalogue() {
                 key={msp.id} 
                 msp={msp} 
                 index={index} 
-                showDeleteButton={editMode && dbIdSet.has(msp.id)}
+                showDeleteButton={editMode}
                 onDelete={handleDeleteMsp}
               />
             ))
