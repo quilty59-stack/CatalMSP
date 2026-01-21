@@ -12,6 +12,7 @@ import { Search, Filter, X, Loader2, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { z } from 'zod';
 
 export default function Catalogue() {
   const [search, setSearch] = useState('');
@@ -87,6 +88,12 @@ export default function Catalogue() {
   };
 
   const handleDeleteMsp = async (id: string) => {
+    const uuidCheck = z.string().uuid().safeParse(id);
+    if (!uuidCheck.success) {
+      toast.info('Cette MSP (démo) ne peut pas être supprimée.');
+      return;
+    }
+
     try {
       // First delete associated photos
       await supabase
@@ -119,6 +126,8 @@ export default function Catalogue() {
   const allMspData = useMemo(() => {
     return [...dbMspList, ...mockMspData];
   }, [dbMspList]);
+
+  const dbIdSet = useMemo(() => new Set(dbMspList.map((m) => m.id)), [dbMspList]);
 
   // Get unique communes from MSPs
   const communes = useMemo(() => {
@@ -312,7 +321,7 @@ export default function Catalogue() {
                 key={msp.id} 
                 msp={msp} 
                 index={index} 
-                showDeleteButton={editMode}
+                showDeleteButton={editMode && dbIdSet.has(msp.id)}
                 onDelete={handleDeleteMsp}
               />
             ))
