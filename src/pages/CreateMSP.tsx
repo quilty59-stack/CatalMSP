@@ -49,18 +49,18 @@ const SETUP_CATEGORIES = [
   { key: 'autre_prepa', label: 'Autre préparation', icon: ImagePlus },
 ];
 
+import { MultiPhotoUpload, UploadedPhoto } from '@/components/MultiPhotoUpload';
+
 export default function CreateMSP() {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isLocating, setIsLocating] = useState(false);
-  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
-  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [entrancePhotos, setEntrancePhotos] = useState<UploadedPhoto[]>([]);
   const [setupPhotos, setSetupPhotos] = useState<SetupPhoto[]>([]);
   const [activeSetupCategory, setActiveSetupCategory] = useState<string | null>(null);
   const [showSiteSuggestions, setShowSiteSuggestions] = useState(false);
   const [selectedSite, setSelectedSite] = useState<SiteConventionne | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const setupFileInputRef = useRef<HTMLInputElement>(null);
   
   const [formData, setFormData] = useState({
@@ -127,25 +127,6 @@ export default function CreateMSP() {
     }));
   };
 
-  const handlePhotoCapture = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setPhotoFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPhotoPreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const removePhoto = () => {
-    setPhotoPreview(null);
-    setPhotoFile(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-  };
 
   const handleSetupPhotoCapture = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -234,7 +215,7 @@ export default function CreateMSP() {
 
   const canProceed = () => {
     if (currentStep === 1) {
-      return photoPreview !== null;
+      return entrancePhotos.length > 0;
     }
     if (currentStep === 2) {
       return formData.siteName && formData.siteType && formData.commune;
@@ -349,15 +330,19 @@ export default function CreateMSP() {
           return;
         }
 
-        // Upload main entrance photo
-        if (photoFile && mspRecord) {
-          const photoUrl = await uploadPhoto(mspRecord.id, photoFile, 'entree_principale');
-          if (photoUrl) {
-            await supabase.from('msp_photos').insert({
-              msp_id: mspRecord.id,
-              category: 'entree_principale',
-              image_url: photoUrl,
-            });
+        // Upload entrance photos
+        if (mspRecord && entrancePhotos.length > 0) {
+          for (let i = 0; i < entrancePhotos.length; i++) {
+            const photo = entrancePhotos[i];
+            const category = i === 0 ? 'entree_principale' : `entree_${i + 1}`;
+            const photoUrl = await uploadPhoto(mspRecord.id, photo.file, category);
+            if (photoUrl) {
+              await supabase.from('msp_photos').insert({
+                msp_id: mspRecord.id,
+                category: category,
+                image_url: photoUrl,
+              });
+            }
           }
         }
 
@@ -392,48 +377,16 @@ export default function CreateMSP() {
         return (
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              Prenez une photo de l'entrée principale du site pour commencer.
+              Prenez une ou plusieurs photos du site pour commencer.
             </p>
             
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              capture="environment"
-              onChange={handlePhotoCapture}
-              className="hidden"
+            <MultiPhotoUpload
+              photos={entrancePhotos}
+              onPhotosChange={setEntrancePhotos}
+              maxPhotos={6}
+              label="Photos d'entrée et du site"
+              placeholder="Prendre des photos du site"
             />
-            
-            {photoPreview ? (
-              <div className="relative">
-                <img 
-                  src={photoPreview} 
-                  alt="Entrée principale" 
-                  className="w-full h-64 object-cover rounded-xl"
-                />
-                <Button
-                  variant="destructive"
-                  size="icon"
-                  className="absolute top-2 right-2"
-                  onClick={removePhoto}
-                >
-                  <X className="w-4 h-4" />
-                </Button>
-              </div>
-            ) : (
-              <div 
-                className="photo-upload-zone h-64 cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors"
-                onClick={() => fileInputRef.current?.click()}
-              >
-                <Camera className="w-12 h-12 text-muted-foreground" />
-                <span className="text-base font-medium text-muted-foreground">
-                  Prendre une photo de l'entrée
-                </span>
-                <span className="text-xs text-muted-foreground">
-                  Appuyez pour ouvrir la caméra
-                </span>
-              </div>
-            )}
           </div>
         );
 
