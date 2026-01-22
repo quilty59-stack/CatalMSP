@@ -52,6 +52,26 @@ const SETUP_CATEGORIES = [
 
 import { MultiPhotoUpload, UploadedPhoto } from '@/components/MultiPhotoUpload';
 
+function looksLikeImage(file: File) {
+  // Some mobile browsers can provide an empty MIME type even when it's an image.
+  if (!file) return false;
+  if (file.type) return file.type.startsWith('image/');
+  return true;
+}
+
+function getImageExtension(file: File) {
+  const fromName = file.name?.includes('.') ? file.name.split('.').pop()?.toLowerCase() : undefined;
+  if (fromName && fromName.length <= 5) return fromName;
+
+  const t = (file.type || '').toLowerCase();
+  if (t.includes('jpeg')) return 'jpg';
+  if (t.includes('png')) return 'png';
+  if (t.includes('webp')) return 'webp';
+  if (t.includes('heic')) return 'heic';
+  if (t.includes('heif')) return 'heif';
+  return 'jpg';
+}
+
 export default function CreateMSP() {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
@@ -132,15 +152,27 @@ export default function CreateMSP() {
 
   const processSetupFiles = (files: FileList | null) => {
     if (!files || files.length === 0 || !activeSetupCategory) return;
-    
+
     const category = activeSetupCategory;
+    setActiveSetupCategory(null);
+
+    const candidates = Array.from(files).filter(looksLikeImage);
+    if (candidates.length === 0) {
+      toast.error('Aucune image détectée. Essayez depuis la Galerie.');
+      return;
+    }
+
     const newPhotos: SetupPhoto[] = [];
     let processed = 0;
-    
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-      if (!file.type.startsWith('image/')) continue;
 
+    const finalizeIfDone = () => {
+      processed++;
+      if (processed === candidates.length) {
+        setSetupPhotos((prev) => [...prev, ...newPhotos]);
+      }
+    };
+
+    for (const file of candidates) {
       const reader = new FileReader();
       reader.onloadend = () => {
         newPhotos.push({
@@ -149,15 +181,15 @@ export default function CreateMSP() {
           file,
           preview: reader.result as string,
         });
-        processed++;
-
-        if (processed === files.length) {
-          setSetupPhotos(prev => [...prev, ...newPhotos]);
-        }
+        finalizeIfDone();
+      };
+      reader.onerror = () => {
+        console.error('FileReader error for setup photo');
+        toast.error('Impossible de lire une photo. Réessayez.');
+        finalizeIfDone();
       };
       reader.readAsDataURL(file);
     }
-    setActiveSetupCategory(null);
   };
 
   const handleSetupCameraCapture = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -257,12 +289,15 @@ export default function CreateMSP() {
   };
 
   const uploadPhoto = async (mspId: string, file: File, category: string): Promise<string | null> => {
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${mspId}/${category}-${Date.now()}.${fileExt}`;
+    const fileExt = getImageExtension(file);
+    const safeCategory = category.replace(/[^a-z0-9_-]/gi, '_');
+    const fileName = `${mspId}/${safeCategory}-${Date.now()}.${fileExt}`;
     
-    const { data, error } = await supabase.storage
+    const { error } = await supabase.storage
       .from('msp-photos')
-      .upload(fileName, file);
+      .upload(fileName, file, {
+        contentType: file.type || (fileExt === 'jpg' ? 'image/jpeg' : `image/${fileExt}`),
+      });
     
     if (error) {
       console.error('Photo upload error:', error);
@@ -366,11 +401,18 @@ export default function CreateMSP() {
             const category = i === 0 ? 'entree_principale' : `entree_${i + 1}`;
             const photoUrl = await uploadPhoto(mspRecord.id, photo.file, category);
             if (photoUrl) {
-              await supabase.from('msp_photos').insert({
+              const { error: photoInsertError } = await supabase.from('msp_photos').insert({
                 msp_id: mspRecord.id,
                 category: category,
                 image_url: photoUrl,
               });
+
+              if (photoInsertError) {
+                console.error('Error inserting entrance photo:', photoInsertError);
+                toast.error('Une photo (entrée) n\'a pas pu être enregistrée.');
+              }
+            } else {
+              toast.error('Une photo (entrée) n\'a pas pu être envoyée.');
             }
           }
         }
@@ -380,11 +422,18 @@ export default function CreateMSP() {
           for (const setupPhoto of setupPhotos) {
             const photoUrl = await uploadPhoto(mspRecord.id, setupPhoto.file, setupPhoto.category);
             if (photoUrl) {
-              await supabase.from('msp_photos').insert({
+              const { error: photoInsertError } = await supabase.from('msp_photos').insert({
                 msp_id: mspRecord.id,
                 category: setupPhoto.category,
                 image_url: photoUrl,
               });
+
+              if (photoInsertError) {
+                console.error('Error inserting setup photo:', photoInsertError);
+                toast.error('Une photo (mise en place) n\'a pas pu être enregistrée.');
+              }
+            } else {
+              toast.error('Une photo (mise en place) n\'a pas pu être envoyée.');
             }
           }
         }
