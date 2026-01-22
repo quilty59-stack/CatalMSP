@@ -26,6 +26,13 @@ export function MultiPhotoUpload({
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
 
+  const looksLikeImage = (file: File) => {
+    // Some mobile browsers can provide an empty MIME type even when it's an image.
+    if (!file) return false;
+    if (file.type) return file.type.startsWith('image/');
+    return true;
+  };
+
   const processFiles = (files: FileList | null) => {
     if (!files || files.length === 0) return;
 
@@ -33,12 +40,15 @@ export function MultiPhotoUpload({
     const remainingSlots = maxPhotos - photos.length;
     const filesToProcess = Math.min(files.length, remainingSlots);
 
+    const candidates = Array.from(files)
+      .slice(0, filesToProcess)
+      .filter(looksLikeImage);
+
+    if (candidates.length === 0) return;
+
     let processed = 0;
     
-    for (let i = 0; i < filesToProcess; i++) {
-      const file = files[i];
-      if (!file.type.startsWith('image/')) continue;
-
+    for (const file of candidates) {
       const reader = new FileReader();
       reader.onloadend = () => {
         newPhotos.push({
@@ -48,7 +58,7 @@ export function MultiPhotoUpload({
         });
         processed++;
 
-        if (processed === filesToProcess) {
+        if (processed === candidates.length) {
           onPhotosChange([...photos, ...newPhotos]);
         }
       };
