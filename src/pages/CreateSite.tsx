@@ -247,7 +247,6 @@ export default function CreateSite() {
               onPhotosChange={setPhotos}
               maxPhotos={8}
               label=""
-              placeholder="Ajouter des photos"
             />
           </CardContent>
         </Card>

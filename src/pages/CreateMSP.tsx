@@ -385,7 +385,6 @@ export default function CreateMSP() {
               onPhotosChange={setEntrancePhotos}
               maxPhotos={6}
               label="Photos d'entrée et du site"
-              placeholder="Prendre des photos du site"
             />
           </div>
         );

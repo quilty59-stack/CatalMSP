@@ -13,7 +13,6 @@ interface MultiPhotoUploadProps {
   onPhotosChange: (photos: UploadedPhoto[]) => void;
   maxPhotos?: number;
   label?: string;
-  placeholder?: string;
   className?: string;
 }
 
@@ -22,13 +21,12 @@ export function MultiPhotoUpload({
   onPhotosChange,
   maxPhotos = 10,
   label = 'Photos',
-  placeholder = 'Ajouter des photos',
   className = '',
 }: MultiPhotoUploadProps) {
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
+  const processFiles = (files: FileList | null) => {
     if (!files || files.length === 0) return;
 
     const newPhotos: UploadedPhoto[] = [];
@@ -56,11 +54,16 @@ export function MultiPhotoUpload({
       };
       reader.readAsDataURL(file);
     }
+  };
 
-    // Reset input
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
+  const handleCameraCapture = (e: React.ChangeEvent<HTMLInputElement>) => {
+    processFiles(e.target.files);
+    if (cameraInputRef.current) cameraInputRef.current.value = '';
+  };
+
+  const handleGallerySelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    processFiles(e.target.files);
+    if (galleryInputRef.current) galleryInputRef.current.value = '';
   };
 
   const removePhoto = (photoId: string) => {
@@ -80,63 +83,71 @@ export function MultiPhotoUpload({
         </div>
       )}
 
+      {/* Hidden inputs */}
       <input
-        ref={fileInputRef}
+        ref={cameraInputRef}
         type="file"
         accept="image/*"
         capture="environment"
+        onChange={handleCameraCapture}
+        className="hidden"
+      />
+      <input
+        ref={galleryInputRef}
+        type="file"
+        accept="image/*"
         multiple
-        onChange={handleFileSelect}
+        onChange={handleGallerySelect}
         className="hidden"
       />
 
       {/* Photo Grid */}
-      <div className="grid grid-cols-3 gap-2">
-        {photos.map((photo) => (
-          <div
-            key={photo.id}
-            className="relative aspect-square rounded-lg overflow-hidden bg-muted"
-          >
-            <img
-              src={photo.preview}
-              alt="Upload"
-              className="w-full h-full object-cover"
-            />
-            <Button
-              variant="destructive"
-              size="icon"
-              className="absolute top-1 right-1 h-6 w-6"
-              onClick={() => removePhoto(photo.id)}
+      {photos.length > 0 && (
+        <div className="grid grid-cols-3 gap-2">
+          {photos.map((photo) => (
+            <div
+              key={photo.id}
+              className="relative aspect-square rounded-lg overflow-hidden bg-muted"
             >
-              <X className="w-3 h-3" />
-            </Button>
-          </div>
-        ))}
+              <img
+                src={photo.preview}
+                alt="Upload"
+                className="w-full h-full object-cover"
+              />
+              <Button
+                variant="destructive"
+                size="icon"
+                className="absolute top-1 right-1 h-6 w-6"
+                onClick={() => removePhoto(photo.id)}
+              >
+                <X className="w-3 h-3" />
+              </Button>
+            </div>
+          ))}
+        </div>
+      )}
 
-        {/* Add Photo Button */}
-        {canAddMore && (
-          <div
-            className="aspect-square rounded-lg border-2 border-dashed border-muted-foreground/30 flex flex-col items-center justify-center gap-1 cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors"
-            onClick={() => fileInputRef.current?.click()}
+      {/* Add Photo Buttons */}
+      {canAddMore && (
+        <div className="flex gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            className="flex-1 h-20 flex-col gap-1"
+            onClick={() => cameraInputRef.current?.click()}
           >
-            <Plus className="w-6 h-6 text-muted-foreground" />
-            <span className="text-xs text-muted-foreground text-center px-1">
-              {photos.length === 0 ? placeholder : 'Ajouter'}
-            </span>
-          </div>
-        )}
-      </div>
-
-      {photos.length === 0 && (
-        <div
-          className="h-32 border-2 border-dashed border-muted-foreground/30 rounded-xl flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors"
-          onClick={() => fileInputRef.current?.click()}
-        >
-          <Camera className="w-8 h-8 text-muted-foreground" />
-          <span className="text-sm text-muted-foreground">{placeholder}</span>
-          <span className="text-xs text-muted-foreground">
-            Appuyez pour prendre ou sélectionner
-          </span>
+            <Camera className="w-6 h-6" />
+            <span className="text-xs">Prendre une photo</span>
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            className="flex-1 h-20 flex-col gap-1"
+            onClick={() => galleryInputRef.current?.click()}
+          >
+            <ImagePlus className="w-6 h-6" />
+            <span className="text-xs">Depuis la galerie</span>
+          </Button>
         </div>
       )}
     </div>
