@@ -7,6 +7,7 @@ import { MSPCard } from '@/components/MSPCard';
 import { MSP, Theme, Status } from '@/types/msp';
 import { supabase } from '@/integrations/supabase/client';
 import { BottomNav } from '@/components/BottomNav';
+import { InstallPWA } from '@/components/InstallPWA';
 import logo from '@/assets/logo.png';
 
 const quickActions = [
@@ -100,7 +101,7 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Section */}
-      <section className="hero-gradient px-4 pt-8 pb-10">
+      <section className="hero-gradient px-4 pt-[calc(env(safe-area-inset-top)+1rem)] pb-10">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -173,6 +174,16 @@ const Index = () => {
               </Link>
             );
           })}
+        </motion.div>
+
+        {/* Install Button */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3, delay: 0.2 }}
+          className="flex justify-center mt-5"
+        >
+          <InstallPWA />
         </motion.div>
       </section>
 
