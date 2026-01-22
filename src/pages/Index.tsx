@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { FolderOpen, Plus, QrCode, ChevronRight, Loader2 } from 'lucide-react';
+import { FolderOpen, Plus, ChevronRight, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { MSPCard } from '@/components/MSPCard';
 import { MSP, Theme, Status } from '@/types/msp';
@@ -10,24 +10,6 @@ import { BottomNav } from '@/components/BottomNav';
 import { InstallPWA } from '@/components/InstallPWA';
 import logo from '@/assets/logo.png';
 
-const quickActions = [
-  {
-    icon: FolderOpen,
-    label: 'Catalogue',
-    path: '/catalogue',
-  },
-  {
-    icon: Plus,
-    label: 'Nouvelle MSP',
-    path: '/creer',
-    featured: true,
-  },
-  {
-    icon: QrCode,
-    label: 'Scanner',
-    path: '/scanner',
-  },
-];
 
 const Index = () => {
   const [mspList, setMspList] = useState<MSP[]>([]);
@@ -143,44 +125,11 @@ const Index = () => {
           </div>
         </motion.div>
 
-        {/* Quick Actions - Horizontal icons */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.15 }}
-          className="flex justify-center gap-8 mt-6"
-        >
-          {quickActions.map((action) => {
-            const Icon = action.icon;
-            return (
-              <Link key={action.path} to={action.path}>
-                <motion.div
-                  whileTap={{ scale: 0.95 }}
-                  className="flex flex-col items-center gap-2"
-                >
-                  <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg transition-transform ${
-                    action.featured 
-                      ? 'bg-white text-primary' 
-                      : 'bg-white/20 text-white backdrop-blur-sm'
-                  }`}>
-                    <Icon className="w-6 h-6" />
-                  </div>
-                  <span className={`text-xs font-medium ${
-                    action.featured ? 'text-white' : 'text-white/80'
-                  }`}>
-                    {action.label}
-                  </span>
-                </motion.div>
-              </Link>
-            );
-          })}
-        </motion.div>
-
         {/* Install Button */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 0.3, delay: 0.2 }}
+          transition={{ duration: 0.3, delay: 0.15 }}
           className="flex justify-center mt-5"
         >
           <InstallPWA />
