@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { Camera, X, Plus, ImagePlus } from 'lucide-react';
+import { Camera, X } from 'lucide-react';
 
 export interface UploadedPhoto {
   id: string;
@@ -23,8 +23,7 @@ export function MultiPhotoUpload({
   label = 'Photos',
   className = '',
 }: MultiPhotoUploadProps) {
-  const cameraInputRef = useRef<HTMLInputElement>(null);
-  const galleryInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const looksLikeImage = (file: File) => {
     // Some mobile browsers can provide an empty MIME type even when it's an image.
@@ -66,14 +65,9 @@ export function MultiPhotoUpload({
     }
   };
 
-  const handleCameraCapture = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     processFiles(e.target.files);
-    if (cameraInputRef.current) cameraInputRef.current.value = '';
-  };
-
-  const handleGallerySelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    processFiles(e.target.files);
-    if (galleryInputRef.current) galleryInputRef.current.value = '';
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const removePhoto = (photoId: string) => {
@@ -93,21 +87,13 @@ export function MultiPhotoUpload({
         </div>
       )}
 
-      {/* Hidden inputs */}
+      {/* Hidden input - no capture attribute = native picker with all options */}
       <input
-        ref={cameraInputRef}
-        type="file"
-        accept="image/*"
-        capture="environment"
-        onChange={handleCameraCapture}
-        className="hidden"
-      />
-      <input
-        ref={galleryInputRef}
+        ref={fileInputRef}
         type="file"
         accept="image/*"
         multiple
-        onChange={handleGallerySelect}
+        onChange={handleFileSelect}
         className="hidden"
       />
 
@@ -137,28 +123,17 @@ export function MultiPhotoUpload({
         </div>
       )}
 
-      {/* Add Photo Buttons */}
+      {/* Add Photo Button - Single button triggers native picker */}
       {canAddMore && (
-        <div className="flex gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            className="flex-1 h-20 flex-col gap-1"
-            onClick={() => cameraInputRef.current?.click()}
-          >
-            <Camera className="w-6 h-6" />
-            <span className="text-xs">Prendre une photo</span>
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            className="flex-1 h-20 flex-col gap-1"
-            onClick={() => galleryInputRef.current?.click()}
-          >
-            <ImagePlus className="w-6 h-6" />
-            <span className="text-xs">Depuis la galerie</span>
-          </Button>
-        </div>
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full h-16 flex-col gap-1"
+          onClick={() => fileInputRef.current?.click()}
+        >
+          <Camera className="w-6 h-6" />
+          <span className="text-xs">Ajouter une photo</span>
+        </Button>
       )}
     </div>
   );
