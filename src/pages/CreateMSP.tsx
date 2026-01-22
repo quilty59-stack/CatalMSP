@@ -36,6 +36,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
 interface SetupPhoto {
+  id: string;
   category: string;
   file: File;
   preview: string;
@@ -58,10 +59,11 @@ export default function CreateMSP() {
   const [isLocating, setIsLocating] = useState(false);
   const [entrancePhotos, setEntrancePhotos] = useState<UploadedPhoto[]>([]);
   const [setupPhotos, setSetupPhotos] = useState<SetupPhoto[]>([]);
-  const [activeSetupCategory, setActiveSetupCategory] = useState<string | null>(null);
   const [showSiteSuggestions, setShowSiteSuggestions] = useState(false);
   const [selectedSite, setSelectedSite] = useState<SiteConventionne | null>(null);
-  const setupFileInputRef = useRef<HTMLInputElement>(null);
+  const setupCameraRef = useRef<HTMLInputElement>(null);
+  const setupGalleryRef = useRef<HTMLInputElement>(null);
+  const [activeSetupCategory, setActiveSetupCategory] = useState<string | null>(null);
   
   const [formData, setFormData] = useState({
     siteName: '',
@@ -128,35 +130,62 @@ export default function CreateMSP() {
   };
 
 
-  const handleSetupPhotoCapture = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file && activeSetupCategory) {
+  const processSetupFiles = (files: FileList | null) => {
+    if (!files || files.length === 0 || !activeSetupCategory) return;
+    
+    const category = activeSetupCategory;
+    const newPhotos: SetupPhoto[] = [];
+    let processed = 0;
+    
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      if (!file.type.startsWith('image/')) continue;
+
       const reader = new FileReader();
       reader.onloadend = () => {
-        setSetupPhotos(prev => [
-          ...prev.filter(p => p.category !== activeSetupCategory),
-          {
-            category: activeSetupCategory,
-            file,
-            preview: reader.result as string
-          }
-        ]);
+        newPhotos.push({
+          id: `setup-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          category,
+          file,
+          preview: reader.result as string,
+        });
+        processed++;
+
+        if (processed === files.length) {
+          setSetupPhotos(prev => [...prev, ...newPhotos]);
+        }
       };
       reader.readAsDataURL(file);
-      setActiveSetupCategory(null);
     }
-    if (setupFileInputRef.current) {
-      setupFileInputRef.current.value = '';
-    }
+    setActiveSetupCategory(null);
   };
 
-  const removeSetupPhoto = (category: string) => {
-    setSetupPhotos(prev => prev.filter(p => p.category !== category));
+  const handleSetupCameraCapture = (e: React.ChangeEvent<HTMLInputElement>) => {
+    processSetupFiles(e.target.files);
+    if (setupCameraRef.current) setupCameraRef.current.value = '';
   };
 
-  const triggerSetupPhotoCapture = (category: string) => {
+  const handleSetupGallerySelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    processSetupFiles(e.target.files);
+    if (setupGalleryRef.current) setupGalleryRef.current.value = '';
+  };
+
+  const removeSetupPhoto = (photoId: string) => {
+    setSetupPhotos(prev => prev.filter(p => p.id !== photoId));
+  };
+
+  const getPhotosForCategory = (category: string) => {
+    return setupPhotos.filter(p => p.category === category);
+  };
+
+  const triggerSetupCamera = (category: string) => {
     setActiveSetupCategory(category);
-    setTimeout(() => setupFileInputRef.current?.click(), 100);
+    setTimeout(() => setupCameraRef.current?.click(), 100);
+  };
+
+  const triggerSetupGallery = (category: string) => {
+    setActiveSetupCategory(category);
+    setTimeout(() => setupGalleryRef.current?.click(), 100);
   };
 
   const handleGeolocation = async () => {
@@ -600,53 +629,87 @@ export default function CreateMSP() {
               Documentez la mise en place de l'exercice. Ces photos aideront les formateurs à préparer le site.
             </p>
 
+            {/* Hidden inputs for camera and gallery */}
             <input
-              ref={setupFileInputRef}
+              ref={setupCameraRef}
               type="file"
               accept="image/*"
               capture="environment"
-              onChange={handleSetupPhotoCapture}
+              onChange={handleSetupCameraCapture}
+              className="hidden"
+            />
+            <input
+              ref={setupGalleryRef}
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handleSetupGallerySelect}
               className="hidden"
             />
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-4">
               {SETUP_CATEGORIES.map((cat) => {
-                const existingPhoto = setupPhotos.find(p => p.category === cat.key);
+                const categoryPhotos = getPhotosForCategory(cat.key);
                 const Icon = cat.icon;
                 
                 return (
-                  <div key={cat.key} className="relative">
-                    {existingPhoto ? (
-                      <div className="relative rounded-xl overflow-hidden border border-border">
-                        <img 
-                          src={existingPhoto.preview} 
-                          alt={cat.label}
-                          className="w-full h-32 object-cover"
-                        />
-                        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-2">
-                          <span className="text-white text-xs font-medium">{cat.label}</span>
-                        </div>
-                        <Button
-                          variant="destructive"
-                          size="icon"
-                          className="absolute top-1 right-1 h-6 w-6"
-                          onClick={() => removeSetupPhoto(cat.key)}
-                        >
-                          <X className="w-3 h-3" />
-                        </Button>
+                  <div key={cat.key} className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Icon className="w-4 h-4 text-muted-foreground" />
+                        <span className="text-sm font-medium">{cat.label}</span>
                       </div>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => triggerSetupPhotoCapture(cat.key)}
-                        className="w-full h-32 rounded-xl border-2 border-dashed border-border hover:border-primary hover:bg-primary/5 transition-colors flex flex-col items-center justify-center gap-2 p-2"
-                      >
-                        <Icon className="w-6 h-6 text-muted-foreground" />
-                        <span className="text-xs text-muted-foreground text-center leading-tight">
-                          {cat.label}
-                        </span>
-                      </button>
+                      <span className="text-xs text-muted-foreground">
+                        {categoryPhotos.length} photo{categoryPhotos.length > 1 ? 's' : ''}
+                      </span>
+                    </div>
+                    
+                    {/* Photos grid */}
+                    {categoryPhotos.length > 0 && (
+                      <div className="grid grid-cols-4 gap-2">
+                        {categoryPhotos.map((photo) => (
+                          <div key={photo.id} className="relative aspect-square rounded-lg overflow-hidden bg-muted">
+                            <img 
+                              src={photo.preview} 
+                              alt={cat.label}
+                              className="w-full h-full object-cover"
+                            />
+                            <Button
+                              variant="destructive"
+                              size="icon"
+                              className="absolute top-1 right-1 h-5 w-5"
+                              onClick={() => removeSetupPhoto(photo.id)}
+                            >
+                              <X className="w-3 h-3" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
                     )}
+                    
+                    {/* Add photo buttons */}
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="flex-1 gap-1"
+                        onClick={() => triggerSetupCamera(cat.key)}
+                      >
+                        <Camera className="w-4 h-4" />
+                        Photo
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="flex-1 gap-1"
+                        onClick={() => triggerSetupGallery(cat.key)}
+                      >
+                        <ImagePlus className="w-4 h-4" />
+                        Galerie
+                      </Button>
+                    </div>
                   </div>
                 );
               })}
