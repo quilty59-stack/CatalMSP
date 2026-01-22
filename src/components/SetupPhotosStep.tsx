@@ -2,7 +2,6 @@ import { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { 
   Camera, 
-  ImagePlus, 
   X, 
   ChevronLeft, 
   ChevronRight,
@@ -10,6 +9,7 @@ import {
   User,
   Flame,
   Package,
+  ImagePlus,
   Sparkles,
   Check,
   ZoomIn
@@ -56,8 +56,7 @@ function looksLikeImage(file: File) {
 }
 
 export function SetupPhotosStep({ photos, onPhotosChange }: SetupPhotosStepProps) {
-  const cameraRef = useRef<HTMLInputElement>(null);
-  const galleryRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const activeCategoryRef = useRef<string | null>(null);
   
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -119,24 +118,14 @@ export function SetupPhotosStep({ photos, onPhotosChange }: SetupPhotosStepProps
     }
   };
 
-  const handleCameraCapture = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     processFiles(e.target.files);
-    if (cameraRef.current) cameraRef.current.value = '';
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  const handleGallerySelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    processFiles(e.target.files);
-    if (galleryRef.current) galleryRef.current.value = '';
-  };
-
-  const triggerCamera = (category: string) => {
+  const triggerFilePicker = (category: string) => {
     activeCategoryRef.current = category;
-    setTimeout(() => cameraRef.current?.click(), 50);
-  };
-
-  const triggerGallery = (category: string) => {
-    activeCategoryRef.current = category;
-    setTimeout(() => galleryRef.current?.click(), 50);
+    setTimeout(() => fileInputRef.current?.click(), 50);
   };
 
   const removePhoto = (photoId: string) => {
@@ -173,21 +162,13 @@ export function SetupPhotosStep({ photos, onPhotosChange }: SetupPhotosStepProps
         </div>
       </div>
 
-      {/* Hidden inputs */}
+      {/* Hidden input - no capture = native picker with camera + gallery */}
       <input
-        ref={cameraRef}
-        type="file"
-        accept="image/*"
-        capture="environment"
-        onChange={handleCameraCapture}
-        className="hidden"
-      />
-      <input
-        ref={galleryRef}
+        ref={fileInputRef}
         type="file"
         accept="image/*"
         multiple
-        onChange={handleGallerySelect}
+        onChange={handleFileSelect}
         className="hidden"
       />
 
@@ -280,27 +261,17 @@ export function SetupPhotosStep({ photos, onPhotosChange }: SetupPhotosStepProps
                 </div>
               )}
 
-              {/* Action Buttons */}
-              <div className={`flex gap-2 p-3 ${hasPhotos ? 'pt-0' : ''}`}>
+              {/* Single Action Button */}
+              <div className={`p-3 ${hasPhotos ? 'pt-0' : ''}`}>
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
-                  className={`flex-1 gap-1.5 h-9 ${hasPhotos ? 'border-dashed' : ''}`}
-                  onClick={() => triggerCamera(cat.key)}
+                  className={`w-full gap-1.5 h-9 ${hasPhotos ? 'border-dashed' : ''}`}
+                  onClick={() => triggerFilePicker(cat.key)}
                 >
                   <Camera className="w-4 h-4" />
-                  <span className="text-xs">Photo</span>
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className={`flex-1 gap-1.5 h-9 ${hasPhotos ? 'border-dashed' : ''}`}
-                  onClick={() => triggerGallery(cat.key)}
-                >
-                  <ImagePlus className="w-4 h-4" />
-                  <span className="text-xs">Galerie</span>
+                  <span className="text-xs">Ajouter une photo</span>
                 </Button>
               </div>
             </motion.div>
