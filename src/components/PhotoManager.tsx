@@ -7,9 +7,10 @@ import {
   Trash2, 
   Plus, 
   Loader2, 
-  Image as ImageIcon,
+  ImagePlus,
   X
 } from 'lucide-react';
+import { useRef } from 'react';
 import { toast } from 'sonner';
 import {
   Dialog,
@@ -58,6 +59,9 @@ export function PhotoManager({ mspId }: PhotoManagerProps) {
   const [comment, setComment] = useState('');
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     loadPhotos();
@@ -81,11 +85,17 @@ export function PhotoManager({ mspId }: PhotoManagerProps) {
     }
   };
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const looksLikeImage = (file: File) => {
+    if (!file) return false;
+    if (file.type) return file.type.startsWith('image/');
+    return true; // Mobile browsers sometimes return empty MIME type
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>, inputRef: React.RefObject<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!file.type.startsWith('image/')) {
+    if (!looksLikeImage(file)) {
       toast.error('Veuillez sélectionner une image');
       return;
     }
@@ -93,6 +103,9 @@ export function PhotoManager({ mspId }: PhotoManagerProps) {
     setSelectedFile(file);
     const url = URL.createObjectURL(file);
     setPreviewUrl(url);
+    
+    // Reset input for next selection
+    if (inputRef.current) inputRef.current.value = '';
   };
 
   const handleUpload = async () => {
@@ -244,21 +257,48 @@ export function PhotoManager({ mspId }: PhotoManagerProps) {
                   </button>
                 </div>
               ) : (
-                <label className="block">
-                  <div className="h-48 border-2 border-dashed border-muted-foreground/30 rounded-lg flex flex-col items-center justify-center gap-3 cursor-pointer hover:border-primary/50 hover:bg-muted/50 transition-colors">
-                    <Camera className="w-10 h-10 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">
-                      Cliquer pour sélectionner
-                    </span>
-                  </div>
+                <div className="space-y-3">
+                  {/* Hidden inputs */}
                   <input
+                    ref={cameraInputRef}
                     type="file"
                     accept="image/*"
                     capture="environment"
-                    onChange={handleFileSelect}
+                    onChange={(e) => handleFileSelect(e, cameraInputRef)}
                     className="hidden"
                   />
-                </label>
+                  <input
+                    ref={galleryInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => handleFileSelect(e, galleryInputRef)}
+                    className="hidden"
+                  />
+                  
+                  {/* Two buttons: Camera and Gallery */}
+                  <div className="flex gap-3">
+                    <button
+                      type="button"
+                      onClick={() => cameraInputRef.current?.click()}
+                      className="flex-1 h-32 border-2 border-dashed border-muted-foreground/30 rounded-lg flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-primary/50 hover:bg-muted/50 transition-colors"
+                    >
+                      <Camera className="w-8 h-8 text-muted-foreground" />
+                      <span className="text-sm text-muted-foreground font-medium">
+                        Prendre une photo
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => galleryInputRef.current?.click()}
+                      className="flex-1 h-32 border-2 border-dashed border-muted-foreground/30 rounded-lg flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-primary/50 hover:bg-muted/50 transition-colors"
+                    >
+                      <ImagePlus className="w-8 h-8 text-muted-foreground" />
+                      <span className="text-sm text-muted-foreground font-medium">
+                        Depuis la galerie
+                      </span>
+                    </button>
+                  </div>
+                </div>
               )}
 
               {/* Category */}
