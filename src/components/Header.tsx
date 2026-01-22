@@ -14,8 +14,8 @@ export function Header({ title, showBack = false, backTo = '/' }: HeaderProps) {
   const isHome = location.pathname === '/';
 
   return (
-    <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border">
-      <div className="container flex items-center justify-between h-16 px-4">
+    <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border pt-[env(safe-area-inset-top)]">
+      <div className="container flex items-center justify-between h-14 px-4">
         {showBack ? (
           <Link to={backTo}>
             <Button variant="ghost" size="sm" className="gap-1.5 -ml-2">
