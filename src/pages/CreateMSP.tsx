@@ -83,6 +83,8 @@ export default function CreateMSP() {
   const [selectedSite, setSelectedSite] = useState<SiteConventionne | null>(null);
   const setupCameraRef = useRef<HTMLInputElement>(null);
   const setupGalleryRef = useRef<HTMLInputElement>(null);
+  // Use ref instead of state for category - state can be lost when camera app opens
+  const activeSetupCategoryRef = useRef<string | null>(null);
   const [activeSetupCategory, setActiveSetupCategory] = useState<string | null>(null);
   
   const [formData, setFormData] = useState({
@@ -151,9 +153,22 @@ export default function CreateMSP() {
 
 
   const processSetupFiles = (files: FileList | null) => {
-    if (!files || files.length === 0 || !activeSetupCategory) return;
+    // Use ref for category - more reliable when camera app returns
+    const category = activeSetupCategoryRef.current;
+    
+    if (!files || files.length === 0 || !category) {
+      console.log('processSetupFiles: no files or no category', { 
+        filesLength: files?.length, 
+        category 
+      });
+      if (files && files.length > 0 && !category) {
+        toast.error('Catégorie non définie. Réessayez.');
+      }
+      return;
+    }
 
-    const category = activeSetupCategory;
+    // Reset category ref
+    activeSetupCategoryRef.current = null;
     setActiveSetupCategory(null);
 
     const candidates = Array.from(files).filter(looksLikeImage);
@@ -211,13 +226,18 @@ export default function CreateMSP() {
   };
 
   const triggerSetupCamera = (category: string) => {
+    // Store in ref (persists when camera app opens) and state (for UI)
+    activeSetupCategoryRef.current = category;
     setActiveSetupCategory(category);
-    setTimeout(() => setupCameraRef.current?.click(), 100);
+    // Small delay to ensure state is set before clicking
+    setTimeout(() => setupCameraRef.current?.click(), 50);
   };
 
   const triggerSetupGallery = (category: string) => {
+    // Store in ref (persists when gallery app opens) and state (for UI)
+    activeSetupCategoryRef.current = category;
     setActiveSetupCategory(category);
-    setTimeout(() => setupGalleryRef.current?.click(), 100);
+    setTimeout(() => setupGalleryRef.current?.click(), 50);
   };
 
   const handleGeolocation = async () => {
