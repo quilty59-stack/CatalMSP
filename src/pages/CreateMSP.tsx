@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Layout } from '@/components/Layout';
 import { Button } from '@/components/ui/button';
@@ -26,31 +26,12 @@ import {
   Navigation,
   X,
   ImagePlus,
-  Flame,
-  User,
-  Wind,
-  Package,
   MapPinned
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-
-interface SetupPhoto {
-  id: string;
-  category: string;
-  file: File;
-  preview: string;
-}
-
-const SETUP_CATEGORIES = [
-  { key: 'fumee', label: 'Machine à fumée', icon: Wind },
-  { key: 'mannequin', label: 'Mannequin', icon: User },
-  { key: 'feu', label: 'Dispositif feu/LED', icon: Flame },
-  { key: 'gaz', label: 'Bouteille de gaz', icon: Package },
-  { key: 'autre_prepa', label: 'Autre préparation', icon: ImagePlus },
-];
-
 import { MultiPhotoUpload, UploadedPhoto } from '@/components/MultiPhotoUpload';
+import { SetupPhotosStep, SetupPhoto } from '@/components/SetupPhotosStep';
 
 function looksLikeImage(file: File) {
   // Some mobile browsers can provide an empty MIME type even when it's an image.
@@ -81,11 +62,6 @@ export default function CreateMSP() {
   const [setupPhotos, setSetupPhotos] = useState<SetupPhoto[]>([]);
   const [showSiteSuggestions, setShowSiteSuggestions] = useState(false);
   const [selectedSite, setSelectedSite] = useState<SiteConventionne | null>(null);
-  const setupCameraRef = useRef<HTMLInputElement>(null);
-  const setupGalleryRef = useRef<HTMLInputElement>(null);
-  // Use ref instead of state for category - state can be lost when camera app opens
-  const activeSetupCategoryRef = useRef<string | null>(null);
-  const [activeSetupCategory, setActiveSetupCategory] = useState<string | null>(null);
   
   const [formData, setFormData] = useState({
     siteName: '',
@@ -149,95 +125,6 @@ export default function CreateMSP() {
       ...prev,
       siteConventionneId: '',
     }));
-  };
-
-
-  const processSetupFiles = (files: FileList | null) => {
-    // Use ref for category - more reliable when camera app returns
-    const category = activeSetupCategoryRef.current;
-    
-    if (!files || files.length === 0 || !category) {
-      console.log('processSetupFiles: no files or no category', { 
-        filesLength: files?.length, 
-        category 
-      });
-      if (files && files.length > 0 && !category) {
-        toast.error('Catégorie non définie. Réessayez.');
-      }
-      return;
-    }
-
-    // Reset category ref
-    activeSetupCategoryRef.current = null;
-    setActiveSetupCategory(null);
-
-    const candidates = Array.from(files).filter(looksLikeImage);
-    if (candidates.length === 0) {
-      toast.error('Aucune image détectée. Essayez depuis la Galerie.');
-      return;
-    }
-
-    const newPhotos: SetupPhoto[] = [];
-    let processed = 0;
-
-    const finalizeIfDone = () => {
-      processed++;
-      if (processed === candidates.length) {
-        setSetupPhotos((prev) => [...prev, ...newPhotos]);
-      }
-    };
-
-    for (const file of candidates) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        newPhotos.push({
-          id: `setup-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-          category,
-          file,
-          preview: reader.result as string,
-        });
-        finalizeIfDone();
-      };
-      reader.onerror = () => {
-        console.error('FileReader error for setup photo');
-        toast.error('Impossible de lire une photo. Réessayez.');
-        finalizeIfDone();
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleSetupCameraCapture = (e: React.ChangeEvent<HTMLInputElement>) => {
-    processSetupFiles(e.target.files);
-    if (setupCameraRef.current) setupCameraRef.current.value = '';
-  };
-
-  const handleSetupGallerySelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    processSetupFiles(e.target.files);
-    if (setupGalleryRef.current) setupGalleryRef.current.value = '';
-  };
-
-  const removeSetupPhoto = (photoId: string) => {
-    setSetupPhotos(prev => prev.filter(p => p.id !== photoId));
-  };
-
-  const getPhotosForCategory = (category: string) => {
-    return setupPhotos.filter(p => p.category === category);
-  };
-
-  const triggerSetupCamera = (category: string) => {
-    // Store in ref (persists when camera app opens) and state (for UI)
-    activeSetupCategoryRef.current = category;
-    setActiveSetupCategory(category);
-    // Small delay to ensure state is set before clicking
-    setTimeout(() => setupCameraRef.current?.click(), 50);
-  };
-
-  const triggerSetupGallery = (category: string) => {
-    // Store in ref (persists when gallery app opens) and state (for UI)
-    activeSetupCategoryRef.current = category;
-    setActiveSetupCategory(category);
-    setTimeout(() => setupGalleryRef.current?.click(), 50);
   };
 
   const handleGeolocation = async () => {
@@ -693,110 +580,10 @@ export default function CreateMSP() {
 
       case 4:
         return (
-          <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              Documentez la mise en place de l'exercice. Ces photos aideront les formateurs à préparer le site.
-            </p>
-
-            {/* Hidden inputs for camera and gallery */}
-            <input
-              ref={setupCameraRef}
-              type="file"
-              accept="image/*"
-              capture="environment"
-              onChange={handleSetupCameraCapture}
-              className="hidden"
-            />
-            <input
-              ref={setupGalleryRef}
-              type="file"
-              accept="image/*"
-              multiple
-              onChange={handleSetupGallerySelect}
-              className="hidden"
-            />
-
-            <div className="space-y-4">
-              {SETUP_CATEGORIES.map((cat) => {
-                const categoryPhotos = getPhotosForCategory(cat.key);
-                const Icon = cat.icon;
-                
-                return (
-                  <div key={cat.key} className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Icon className="w-4 h-4 text-muted-foreground" />
-                        <span className="text-sm font-medium">{cat.label}</span>
-                      </div>
-                      <span className="text-xs text-muted-foreground">
-                        {categoryPhotos.length} photo{categoryPhotos.length > 1 ? 's' : ''}
-                      </span>
-                    </div>
-                    
-                    {/* Photos grid */}
-                    {categoryPhotos.length > 0 && (
-                      <div className="grid grid-cols-4 gap-2">
-                        {categoryPhotos.map((photo) => (
-                          <div key={photo.id} className="relative aspect-square rounded-lg overflow-hidden bg-muted">
-                            <img 
-                              src={photo.preview} 
-                              alt={cat.label}
-                              className="w-full h-full object-cover"
-                            />
-                            <Button
-                              variant="destructive"
-                              size="icon"
-                              className="absolute top-1 right-1 h-5 w-5"
-                              onClick={() => removeSetupPhoto(photo.id)}
-                            >
-                              <X className="w-3 h-3" />
-                            </Button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                    
-                    {/* Add photo buttons */}
-                    <div className="flex gap-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="flex-1 gap-1"
-                        onClick={() => triggerSetupCamera(cat.key)}
-                      >
-                        <Camera className="w-4 h-4" />
-                        Photo
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="flex-1 gap-1"
-                        onClick={() => triggerSetupGallery(cat.key)}
-                      >
-                        <ImagePlus className="w-4 h-4" />
-                        Galerie
-                      </Button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            <div className="mt-4 p-4 bg-primary/5 rounded-lg border border-primary/20">
-              <div className="flex items-start gap-3">
-                <Sparkles className="w-5 h-5 text-primary mt-0.5" />
-                <div>
-                  <h4 className="font-semibold text-foreground">Génération IA</h4>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    L'IA génère automatiquement : objectifs pédagogiques, 
-                    niveaux de difficulté, consignes, organisation, matériel...
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
+          <SetupPhotosStep
+            photos={setupPhotos}
+            onPhotosChange={setSetupPhotos}
+          />
         );
 
       default:
