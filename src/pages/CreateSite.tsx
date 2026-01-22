@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Layout } from '@/components/Layout';
 import { Button } from '@/components/ui/button';
@@ -18,7 +18,6 @@ import {
   Building2,
   Loader2,
   Navigation,
-  X,
   Save,
   Phone,
   Mail,
@@ -29,14 +28,13 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { MultiPhotoUpload, UploadedPhoto } from '@/components/MultiPhotoUpload';
 
 export default function CreateSite() {
   const navigate = useNavigate();
   const [isLocating, setIsLocating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
-  const [photoFile, setPhotoFile] = useState<File | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [photos, setPhotos] = useState<UploadedPhoto[]>([]);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -70,25 +68,6 @@ export default function CreateSite() {
     }));
   };
 
-  const handlePhotoCapture = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setPhotoFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPhotoPreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const removePhoto = () => {
-    setPhotoPreview(null);
-    setPhotoFile(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-  };
 
   const handleGeolocation = async () => {
     if (!navigator.geolocation) {
@@ -157,21 +136,33 @@ export default function CreateSite() {
       // Generate slug
       const slug = `${formData.name.toLowerCase().replace(/[^a-z0-9]/g, '-')}-${Date.now().toString(36)}`;
 
-      // Upload photo if present
+      // Upload photos if present
       let photoUrl = null;
-      if (photoFile) {
-        const fileExt = photoFile.name.split('.').pop();
-        const fileName = `sites/${slug}/photo.${fileExt}`;
+      if (photos.length > 0) {
+        // Upload first photo as main photo
+        const firstPhoto = photos[0];
+        const fileExt = firstPhoto.file.name.split('.').pop();
+        const fileName = `sites/${slug}/photo-main.${fileExt}`;
         
-        const { data: uploadData, error: uploadError } = await supabase.storage
+        const { error: uploadError } = await supabase.storage
           .from('msp-photos')
-          .upload(fileName, photoFile);
+          .upload(fileName, firstPhoto.file);
         
         if (!uploadError) {
           const { data: urlData } = supabase.storage
             .from('msp-photos')
             .getPublicUrl(fileName);
           photoUrl = urlData.publicUrl;
+        }
+
+        // Upload additional photos
+        for (let i = 1; i < photos.length; i++) {
+          const photo = photos[i];
+          const ext = photo.file.name.split('.').pop();
+          const additionalFileName = `sites/${slug}/photo-${i}.${ext}`;
+          await supabase.storage
+            .from('msp-photos')
+            .upload(additionalFileName, photo.file);
         }
       }
 
@@ -247,44 +238,17 @@ export default function CreateSite() {
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
               <Camera className="w-4 h-4" />
-              Photo du site
+              Photos du site
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-0">
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              capture="environment"
-              onChange={handlePhotoCapture}
-              className="hidden"
+            <MultiPhotoUpload
+              photos={photos}
+              onPhotosChange={setPhotos}
+              maxPhotos={8}
+              label=""
+              placeholder="Ajouter des photos"
             />
-            
-            {photoPreview ? (
-              <div className="relative">
-                <img 
-                  src={photoPreview} 
-                  alt="Site" 
-                  className="w-full h-48 object-cover rounded-xl"
-                />
-                <Button
-                  variant="destructive"
-                  size="icon"
-                  className="absolute top-2 right-2"
-                  onClick={removePhoto}
-                >
-                  <X className="w-4 h-4" />
-                </Button>
-              </div>
-            ) : (
-              <div 
-                className="h-32 border-2 border-dashed border-border rounded-xl flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors"
-                onClick={() => fileInputRef.current?.click()}
-              >
-                <Camera className="w-8 h-8 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">Ajouter une photo</span>
-              </div>
-            )}
           </CardContent>
         </Card>
 
