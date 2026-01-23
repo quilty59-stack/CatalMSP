@@ -159,7 +159,7 @@ export const SiteContactPDF = forwardRef<HTMLDivElement, SiteContactPDFProps>(
               <div className="border-l border-gray-300 p-3 bg-gray-50">
                 <span className="text-xs text-gray-500 block mb-2">PHOTOS DU SITE</span>
                 <div className="space-y-2">
-                  {/* Photo 1: Vue générale - Site photo */}
+                  {/* Photo 1: Vue générale - Site photo (enlarged) */}
                   <div className="border border-gray-300 rounded overflow-hidden bg-white">
                     <div className="text-xs text-gray-500 px-2 py-1 bg-gray-100 border-b border-gray-200">
                       📷 Photo 1 : Vue générale
@@ -168,43 +168,33 @@ export const SiteContactPDF = forwardRef<HTMLDivElement, SiteContactPDFProps>(
                       <img 
                         src={site.photoUrl} 
                         alt="Vue générale"
-                        className="w-full h-16 object-cover"
+                        className="w-full h-28 object-cover"
                         crossOrigin="anonymous"
                       />
                     ) : (
-                      <div className="h-16 flex items-center justify-center text-gray-400 text-xs">
+                      <div className="h-28 flex items-center justify-center text-gray-400 text-xs">
                         Aucune photo
                       </div>
                     )}
                   </div>
                   
-                  {/* Photo 2: Accès - Full address */}
+                  {/* Photo 2: Plan - Static map */}
                   <div className="border border-gray-300 rounded overflow-hidden bg-white">
                     <div className="text-xs text-gray-500 px-2 py-1 bg-gray-100 border-b border-gray-200">
-                      📷 Photo 2 : Accès
-                    </div>
-                    <div className="h-16 flex items-center justify-center text-gray-500 text-xs p-2 text-center">
-                      {site.address}{site.postalCode ? `\n${site.postalCode}` : ''} {site.commune}
-                    </div>
-                  </div>
-                  
-                  {/* Photo 3: Plan - Static map */}
-                  <div className="border border-gray-300 rounded overflow-hidden bg-white">
-                    <div className="text-xs text-gray-500 px-2 py-1 bg-gray-100 border-b border-gray-200">
-                      📷 Photo 3 : Plan
+                      📷 Photo 2 : Plan
                     </div>
                     {mapImageBase64 ? (
                       <img 
                         src={mapImageBase64}
                         alt="Plan du site"
-                        className="w-full h-16 object-cover"
+                        className="w-full h-20 object-cover"
                       />
                     ) : site.latitude && site.longitude ? (
-                      <div className="h-16 flex items-center justify-center text-gray-500 text-xs">
+                      <div className="h-20 flex items-center justify-center text-gray-500 text-xs">
                         📍 {site.latitude.toFixed(5)}, {site.longitude.toFixed(5)}
                       </div>
                     ) : (
-                      <div className="h-16 flex items-center justify-center text-gray-400 text-xs">
+                      <div className="h-20 flex items-center justify-center text-gray-400 text-xs">
                         Coordonnées GPS non disponibles
                       </div>
                     )}
