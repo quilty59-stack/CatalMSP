@@ -16,6 +16,7 @@ export interface SiteConventionne {
   unauthorizedManeuvers: string[];
   notes?: string;
   photoUrl?: string;
+  logoUrl?: string;
   conventionNotes?: string;
   accessKeys?: string;
   recurrence?: string;
@@ -59,6 +60,7 @@ export const transformDbToSite = (record: any): SiteConventionne => ({
   unauthorizedManeuvers: record.unauthorized_maneuvers || DEFAULT_UNAUTHORIZED_MANEUVERS,
   notes: record.notes,
   photoUrl: record.photo_url,
+  logoUrl: record.logo_url,
   conventionNotes: record.convention_notes,
   accessKeys: record.access_keys,
   recurrence: record.recurrence,

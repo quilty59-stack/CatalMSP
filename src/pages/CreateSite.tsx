@@ -27,7 +27,9 @@ import {
   Calendar,
   RefreshCw,
   CheckCircle,
-  XCircle
+  XCircle,
+  X,
+  ImageIcon
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -38,6 +40,25 @@ export default function CreateSite() {
   const [isLocating, setIsLocating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [photos, setPhotos] = useState<UploadedPhoto[]>([]);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  
+  const handleLogoCapture = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setLogoFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setLogoPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeLogo = () => {
+    setLogoPreview(null);
+    setLogoFile(null);
+  };
   
   const [formData, setFormData] = useState({
     name: '',
@@ -190,6 +211,24 @@ export default function CreateSite() {
         }
       }
 
+      // Upload logo if present
+      let logoUrl = null;
+      if (logoFile) {
+        const logoExt = logoFile.name.split('.').pop();
+        const logoFileName = `sites/${slug}/logo.${logoExt}`;
+        
+        const { error: logoUploadError } = await supabase.storage
+          .from('msp-photos')
+          .upload(logoFileName, logoFile);
+        
+        if (!logoUploadError) {
+          const { data: logoUrlData } = supabase.storage
+            .from('msp-photos')
+            .getPublicUrl(logoFileName);
+          logoUrl = logoUrlData.publicUrl;
+        }
+      }
+
       // Insert site
       const { data, error } = await supabase
         .from('sites_conventionnes')
@@ -216,6 +255,7 @@ export default function CreateSite() {
           convention_signed_at: formData.conventionSignedAt || null,
           convention_expires_at: formData.conventionExpiresAt || null,
           photo_url: photoUrl,
+          logo_url: logoUrl,
         }])
         .select()
         .single();
@@ -260,6 +300,52 @@ export default function CreateSite() {
         </div>
 
         <h1 className="text-xl font-bold text-foreground">Nouveau site conventionné</h1>
+
+        {/* Logo */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <ImageIcon className="w-4 h-4" />
+              Logo du partenaire
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <input
+              type="file"
+              accept="image/*"
+              capture="environment"
+              onChange={handleLogoCapture}
+              className="hidden"
+              id="logo-upload"
+            />
+            
+            {logoPreview ? (
+              <div className="relative w-32 h-32 mx-auto">
+                <img 
+                  src={logoPreview} 
+                  alt="Logo" 
+                  className="w-full h-full object-contain rounded-xl border border-border bg-white p-2"
+                />
+                <Button
+                  variant="destructive"
+                  size="icon"
+                  className="absolute -top-2 -right-2 h-6 w-6"
+                  onClick={removeLogo}
+                >
+                  <X className="w-3 h-3" />
+                </Button>
+              </div>
+            ) : (
+              <label 
+                htmlFor="logo-upload"
+                className="h-32 w-32 mx-auto border-2 border-dashed border-border rounded-xl flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors"
+              >
+                <ImageIcon className="w-8 h-8 text-muted-foreground" />
+                <span className="text-xs text-muted-foreground text-center">Ajouter un logo</span>
+              </label>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Photo */}
         <Card>
