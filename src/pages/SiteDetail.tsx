@@ -35,7 +35,7 @@ export default function SiteDetail() {
   const [linkedMsps, setLinkedMsps] = useState<MSP[]>([]);
   const [loadingMsps, setLoadingMsps] = useState(true);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
-  const { contentRef, generatePDF } = useGenerateSitePDF();
+  const { contentRef, generatePDF, mapImageBase64 } = useGenerateSitePDF();
 
   const handleDownloadPDF = async () => {
     if (!site) return;
@@ -199,7 +199,7 @@ export default function SiteDetail() {
 
         {/* Hidden PDF Content for generation */}
         <div className="fixed left-[-9999px] top-0">
-          <SiteContactPDF ref={contentRef} site={site} />
+          <SiteContactPDF ref={contentRef} site={site} mapImageBase64={mapImageBase64} />
         </div>
 
         {/* Site Header with Map */}
