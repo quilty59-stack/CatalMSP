@@ -62,17 +62,17 @@ export function SiteCard({ site, index = 0 }: SiteCardProps) {
                 <span>{SITE_TYPES[site.siteType as keyof typeof SITE_TYPES] || site.siteType}</span>
               </div>
 
-              {/* Domains */}
-              {site.domains.length > 0 && (
+              {/* Authorized Maneuvers */}
+              {site.authorizedManeuvers.length > 0 && (
                 <div className="flex flex-wrap gap-1 mt-2">
-                  {site.domains.slice(0, 2).map((domain) => (
-                    <Badge key={domain} variant="secondary" className="text-xs">
-                      {domain}
+                  {site.authorizedManeuvers.slice(0, 2).map((maneuver) => (
+                    <Badge key={maneuver} variant="secondary" className="text-xs">
+                      {maneuver}
                     </Badge>
                   ))}
-                  {site.domains.length > 2 && (
+                  {site.authorizedManeuvers.length > 2 && (
                     <Badge variant="outline" className="text-xs">
-                      +{site.domains.length - 2}
+                      +{site.authorizedManeuvers.length - 2}
                     </Badge>
                   )}
                 </div>

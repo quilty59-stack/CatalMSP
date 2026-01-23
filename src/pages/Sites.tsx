@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Search, Filter, X, Loader2, Map, List, Plus } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { DOMAINS, SiteConventionne } from '@/types/site';
+import { MANEUVER_TYPES, SiteConventionne } from '@/types/site';
 import { Link } from 'react-router-dom';
 
 export default function Sites() {
@@ -34,7 +34,7 @@ export default function Sites() {
         site.commune.toLowerCase().includes(searchLower) ||
         site.address.toLowerCase().includes(searchLower);
 
-      const matchesDomain = !domainFilter || site.domains.includes(domainFilter);
+      const matchesDomain = !domainFilter || site.authorizedManeuvers.includes(domainFilter);
       const matchesCommune = !communeFilter || site.commune === communeFilter;
 
       return matchesSearch && matchesDomain && matchesCommune;
@@ -112,17 +112,17 @@ export default function Sites() {
             >
               <div>
                 <label className="text-sm font-medium text-foreground mb-2 block">
-                  Domaine
+                  Type de manœuvre
                 </label>
                 <div className="flex flex-wrap gap-2">
-                  {DOMAINS.map((domain) => (
+                  {MANEUVER_TYPES.map((maneuver) => (
                     <Button
-                      key={domain}
-                      variant={domainFilter === domain ? 'default' : 'outline'}
+                      key={maneuver}
+                      variant={domainFilter === maneuver ? 'default' : 'outline'}
                       size="sm"
-                      onClick={() => setDomainFilter(domainFilter === domain ? null : domain)}
+                      onClick={() => setDomainFilter(domainFilter === maneuver ? null : maneuver)}
                     >
-                      {domain}
+                      {maneuver}
                     </Button>
                   ))}
                 </div>

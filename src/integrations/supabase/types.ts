@@ -170,72 +170,84 @@ export type Database = {
       }
       sites_conventionnes: {
         Row: {
+          access_keys: string | null
           address: string
+          authorized_maneuvers: string[] | null
           commune: string
           contact_email: string | null
           contact_name: string | null
           contact_phone: string | null
+          contact_phone_landline: string | null
           convention_expires_at: string | null
           convention_notes: string | null
           convention_signed_at: string | null
           created_at: string
-          domains: string[] | null
           id: string
           latitude: number | null
           longitude: number | null
           name: string
           notes: string | null
-          opening_hours: string | null
           photo_url: string | null
           postal_code: string | null
+          recurrence: string | null
           site_type: string
           slug: string
+          specific_modalities: string | null
+          unauthorized_maneuvers: string[] | null
           updated_at: string
         }
         Insert: {
+          access_keys?: string | null
           address: string
+          authorized_maneuvers?: string[] | null
           commune: string
           contact_email?: string | null
           contact_name?: string | null
           contact_phone?: string | null
+          contact_phone_landline?: string | null
           convention_expires_at?: string | null
           convention_notes?: string | null
           convention_signed_at?: string | null
           created_at?: string
-          domains?: string[] | null
           id?: string
           latitude?: number | null
           longitude?: number | null
           name: string
           notes?: string | null
-          opening_hours?: string | null
           photo_url?: string | null
           postal_code?: string | null
+          recurrence?: string | null
           site_type?: string
           slug: string
+          specific_modalities?: string | null
+          unauthorized_maneuvers?: string[] | null
           updated_at?: string
         }
         Update: {
+          access_keys?: string | null
           address?: string
+          authorized_maneuvers?: string[] | null
           commune?: string
           contact_email?: string | null
           contact_name?: string | null
           contact_phone?: string | null
+          contact_phone_landline?: string | null
           convention_expires_at?: string | null
           convention_notes?: string | null
           convention_signed_at?: string | null
           created_at?: string
-          domains?: string[] | null
           id?: string
           latitude?: number | null
           longitude?: number | null
           name?: string
           notes?: string | null
-          opening_hours?: string | null
           photo_url?: string | null
           postal_code?: string | null
+          recurrence?: string | null
           site_type?: string
           slug?: string
+          specific_modalities?: string | null
+          unauthorized_maneuvers?: string[] | null
           updated_at?: string
         }
         Relationships: []

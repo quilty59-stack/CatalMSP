@@ -480,11 +480,11 @@ export default function CreateMSP() {
                     >
                       <p className="text-sm font-medium">{site.name}</p>
                       <p className="text-xs text-muted-foreground">{site.address}, {site.commune}</p>
-                      {site.domains.length > 0 && (
+                      {site.authorizedManeuvers.length > 0 && (
                         <div className="flex flex-wrap gap-1 mt-1">
-                          {site.domains.slice(0, 2).map((domain) => (
-                            <span key={domain} className="text-xs px-1.5 py-0.5 rounded bg-primary/10 text-primary">
-                              {domain}
+                          {site.authorizedManeuvers.slice(0, 2).map((maneuver) => (
+                            <span key={maneuver} className="text-xs px-1.5 py-0.5 rounded bg-primary/10 text-primary">
+                              {maneuver}
                             </span>
                           ))}
                         </div>

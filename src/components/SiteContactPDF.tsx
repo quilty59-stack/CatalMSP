@@ -213,15 +213,15 @@ export const SiteContactPDF = forwardRef<HTMLDivElement, SiteContactPDFProps>(
           <div className="border border-gray-300 border-t-0 p-3 space-y-2">
             <div className="grid grid-cols-[150px_1fr] gap-2 items-center">
               <span className="text-xs text-gray-500">Accès / Clés :</span>
-              <div className="border-b border-gray-300 pb-1 min-h-[18px]"></div>
+              <div className="border-b border-gray-300 pb-1 min-h-[18px]">{site.accessKeys || ''}</div>
             </div>
             <div className="grid grid-cols-[150px_1fr] gap-2 items-center">
               <span className="text-xs text-gray-500">Récurrence :</span>
-              <div className="border-b border-gray-300 pb-1 min-h-[18px]">{site.openingHours || ''}</div>
+              <div className="border-b border-gray-300 pb-1 min-h-[18px]">{site.recurrence || ''}</div>
             </div>
             <div className="grid grid-cols-[150px_1fr] gap-2 items-start">
               <span className="text-xs text-gray-500">Modalités spécifiques :</span>
-              <div className="border-b border-gray-300 pb-1 min-h-[36px]"></div>
+              <div className="border-b border-gray-300 pb-1 min-h-[36px]">{site.specificModalities || ''}</div>
             </div>
           </div>
         </div>
@@ -236,13 +236,13 @@ export const SiteContactPDF = forwardRef<HTMLDivElement, SiteContactPDFProps>(
               <div>
                 <span className="text-xs font-semibold text-green-700">✓ Autorisés :</span>
                 <div className="border border-gray-200 mt-1 p-2 min-h-[50px] bg-green-50/50 text-sm">
-                  {site.domains.length > 0 ? site.domains.join(', ') : ''}
+                  {site.authorizedManeuvers.length > 0 ? site.authorizedManeuvers.join(', ') : ''}
                 </div>
               </div>
               <div>
                 <span className="text-xs font-semibold text-red-700">✗ Non autorisés :</span>
                 <div className="border border-gray-200 mt-1 p-2 min-h-[50px] bg-red-50/50 text-sm">
-                  
+                  {site.unauthorizedManeuvers.length > 0 ? site.unauthorizedManeuvers.join(', ') : ''}
                 </div>
               </div>
             </div>
