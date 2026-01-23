@@ -188,22 +188,17 @@ export const SiteContactPDF = forwardRef<HTMLDivElement, SiteContactPDFProps>(
                     </div>
                   </div>
                   
-                  {/* Photo 3: Plan - Static map */}
+                  {/* Photo 3: Plan - Static map using free OpenStreetMap service */}
                   <div className="border border-gray-300 rounded overflow-hidden bg-white">
                     <div className="text-xs text-gray-500 px-2 py-1 bg-gray-100 border-b border-gray-200">
                       📷 Photo 3 : Plan
                     </div>
                     {site.latitude && site.longitude ? (
                       <img 
-                        src={`https://www.openstreetmap.org/export/embed.html?bbox=${site.longitude - 0.005}%2C${site.latitude - 0.003}%2C${site.longitude + 0.005}%2C${site.latitude + 0.003}&layer=mapnik&marker=${site.latitude}%2C${site.longitude}`}
+                        src={`https://staticmap.openstreetmap.de/staticmap.php?center=${site.latitude},${site.longitude}&zoom=17&size=300x120&maptype=mapnik&markers=${site.latitude},${site.longitude},red-pushpin`}
                         alt="Plan du site"
                         className="w-full h-16 object-cover"
                         crossOrigin="anonymous"
-                        onError={(e) => {
-                          // Fallback to a static tile if embed fails
-                          const target = e.target as HTMLImageElement;
-                          target.src = `https://tile.openstreetmap.org/16/${Math.floor((site.longitude! + 180) / 360 * Math.pow(2, 16))}/${Math.floor((1 - Math.log(Math.tan(site.latitude! * Math.PI / 180) + 1 / Math.cos(site.latitude! * Math.PI / 180)) / Math.PI) / 2 * Math.pow(2, 16))}.png`;
-                        }}
                       />
                     ) : (
                       <div className="h-16 flex items-center justify-center text-gray-400 text-xs">
