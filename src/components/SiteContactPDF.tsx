@@ -86,7 +86,14 @@ export const SiteContactPDF = forwardRef<HTMLDivElement, SiteContactPDFProps>(
               
               {/* Right side - Logo/Photo */}
               <div className="border-l border-gray-300 p-3 flex flex-col items-center justify-center bg-gray-50">
-                {site.photoUrl ? (
+                {site.logoUrl ? (
+                  <img 
+                    src={site.logoUrl} 
+                    alt={`Logo ${site.name}`}
+                    className="w-24 h-24 object-contain rounded"
+                    crossOrigin="anonymous"
+                  />
+                ) : site.photoUrl ? (
                   <img 
                     src={site.photoUrl} 
                     alt={site.name}
