@@ -205,19 +205,30 @@ export default function SiteDetail() {
         {/* Site Header with Map */}
         <div className="grid gap-4 lg:grid-cols-2">
           <div className="space-y-4">
-            {/* Photo and Info */}
+            {/* Photo/Logo and Info */}
             <div className="flex gap-4">
-              {site.photoUrl ? (
-                <img 
-                  src={site.photoUrl}
-                  alt={site.name}
-                  className="w-24 h-24 rounded-xl object-cover"
-                />
-              ) : (
-                <div className="w-24 h-24 rounded-xl bg-muted flex items-center justify-center">
-                  <Building2 className="w-10 h-10 text-muted-foreground" />
-                </div>
-              )}
+              <div className="flex gap-2">
+                {/* Logo */}
+                {site.logoUrl && (
+                  <img 
+                    src={site.logoUrl}
+                    alt={`Logo ${site.name}`}
+                    className="w-16 h-16 rounded-lg object-contain bg-white border border-border p-1"
+                  />
+                )}
+                {/* Photo */}
+                {site.photoUrl ? (
+                  <img 
+                    src={site.photoUrl}
+                    alt={site.name}
+                    className="w-24 h-24 rounded-xl object-cover"
+                  />
+                ) : !site.logoUrl && (
+                  <div className="w-24 h-24 rounded-xl bg-muted flex items-center justify-center">
+                    <Building2 className="w-10 h-10 text-muted-foreground" />
+                  </div>
+                )}
+              </div>
               
               <div className="flex-1">
                 <h1 className="text-xl font-bold text-foreground">{site.name}</h1>
