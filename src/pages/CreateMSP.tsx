@@ -69,7 +69,7 @@ export default function CreateMSP() {
     commune: '',
     address: '',
     mapsLink: '',
-    theme: 'incendie' as Theme,
+    themes: ['incendie'] as Theme[],
     briefDescription: '',
     siteConventionneId: '' as string,
   });
@@ -189,7 +189,7 @@ export default function CreateMSP() {
       return formData.siteName && formData.siteType && formData.commune;
     }
     if (currentStep === 3) {
-      return formData.theme;
+      return formData.themes.length > 0;
     }
     // Step 4: setup photos are optional
     return true;
@@ -234,7 +234,7 @@ export default function CreateMSP() {
           siteType: formData.siteType,
           commune: formData.commune,
           address: formData.address,
-          theme: formData.theme,
+          themes: formData.themes,
           briefDescription: formData.briefDescription,
         },
       });
@@ -260,7 +260,7 @@ export default function CreateMSP() {
         const mspInsertData = {
           slug: tempSlug,
           title: mspContent.title || `MSP ${formData.siteName}`,
-          theme: formData.theme,
+          theme: formData.themes.join(', '),
           status: 'brouillon',
           difficulty: mspContent.difficulty || 2,
           site_name: formData.siteName,
@@ -538,24 +538,41 @@ export default function CreateMSP() {
         );
 
       case 3:
+        const toggleTheme = (theme: Theme) => {
+          const currentThemes = formData.themes;
+          if (currentThemes.includes(theme)) {
+            // Remove theme if already selected (but keep at least one)
+            if (currentThemes.length > 1) {
+              updateField('themes', currentThemes.filter(t => t !== theme));
+            }
+          } else {
+            // Add theme
+            updateField('themes', [...currentThemes, theme]);
+          }
+        };
+        
         return (
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>Thème de la MSP *</Label>
+              <Label>Thème(s) de la MSP * <span className="text-xs text-muted-foreground font-normal">(multi-sélection possible)</span></Label>
               <div className="grid grid-cols-2 gap-2">
-                {(Object.keys(THEMES) as Theme[]).map((theme) => (
-                  <Button
-                    key={theme}
-                    type="button"
-                    variant={formData.theme === theme ? 'default' : 'outline'}
-                    className={`h-auto py-3 px-4 justify-start ${
-                      formData.theme === theme ? 'gradient-hero border-0' : ''
-                    }`}
-                    onClick={() => updateField('theme', theme)}
-                  >
-                    <span className="text-sm">{THEMES[theme]}</span>
-                  </Button>
-                ))}
+                {(Object.keys(THEMES) as Theme[]).map((theme) => {
+                  const isSelected = formData.themes.includes(theme);
+                  return (
+                    <Button
+                      key={theme}
+                      type="button"
+                      variant={isSelected ? 'default' : 'outline'}
+                      className={`h-auto py-3 px-4 justify-start ${
+                        isSelected ? 'gradient-hero border-0' : ''
+                      }`}
+                      onClick={() => toggleTheme(theme)}
+                    >
+                      {isSelected && <Check className="w-4 h-4 mr-2" />}
+                      <span className="text-sm">{THEMES[theme]}</span>
+                    </Button>
+                  );
+                })}
               </div>
             </div>
 
