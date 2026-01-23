@@ -65,12 +65,16 @@ export const SiteContactPDF = forwardRef<HTMLDivElement, SiteContactPDFProps>(
                   </div>
                 </div>
                 <div className="grid grid-cols-[120px_1fr] gap-2 items-center">
-                  <span className="font-semibold text-gray-700">Téléphone :</span>
+                  <span className="font-semibold text-gray-700">Tél. mobile :</span>
                   <div className="flex gap-4">
                     <span className="border-b border-gray-300 flex-1 pb-1 min-h-[18px]">{site.contactPhone || ''}</span>
-                    <span className="text-xs text-gray-500">Email :</span>
-                    <span className="border-b border-gray-300 flex-1 pb-1 min-h-[18px]">{site.contactEmail || ''}</span>
+                    <span className="text-xs text-gray-500">Tél. fixe :</span>
+                    <span className="border-b border-gray-300 flex-1 pb-1 min-h-[18px]">{site.contactPhoneLandline || ''}</span>
                   </div>
+                </div>
+                <div className="grid grid-cols-[120px_1fr] gap-2 items-center">
+                  <span className="font-semibold text-gray-700">Email :</span>
+                  <span className="border-b border-gray-300 pb-1 min-h-[18px]">{site.contactEmail || ''}</span>
                 </div>
                 <div className="grid grid-cols-[120px_1fr] gap-2 items-center">
                   <span className="font-semibold text-gray-700">Adresse :</span>
