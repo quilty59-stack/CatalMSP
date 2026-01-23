@@ -10,19 +10,23 @@ export interface SiteConventionne {
   longitude?: number;
   contactName?: string;
   contactPhone?: string;
+  contactPhoneLandline?: string;
   contactEmail?: string;
-  domains: string[];
+  authorizedManeuvers: string[];
+  unauthorizedManeuvers: string[];
   notes?: string;
   photoUrl?: string;
   conventionNotes?: string;
-  openingHours?: string;
+  accessKeys?: string;
+  recurrence?: string;
+  specificModalities?: string;
   conventionSignedAt?: string;
   conventionExpiresAt?: string;
   createdAt: string;
   updatedAt: string;
 }
 
-export const DOMAINS = [
+export const MANEUVER_TYPES = [
   'Incendie',
   'Secours',
   'Risques chimiques',
@@ -30,6 +34,11 @@ export const DOMAINS = [
   'Sauvetage',
   'Formation initiale',
   'Formation continue',
+];
+
+export const DEFAULT_UNAUTHORIZED_MANEUVERS = [
+  'Pas de feu réel',
+  'Pas d\'eau',
 ];
 
 export const transformDbToSite = (record: any): SiteConventionne => ({
@@ -44,12 +53,16 @@ export const transformDbToSite = (record: any): SiteConventionne => ({
   longitude: record.longitude ? Number(record.longitude) : undefined,
   contactName: record.contact_name,
   contactPhone: record.contact_phone,
+  contactPhoneLandline: record.contact_phone_landline,
   contactEmail: record.contact_email,
-  domains: record.domains || [],
+  authorizedManeuvers: record.authorized_maneuvers || [],
+  unauthorizedManeuvers: record.unauthorized_maneuvers || DEFAULT_UNAUTHORIZED_MANEUVERS,
   notes: record.notes,
   photoUrl: record.photo_url,
   conventionNotes: record.convention_notes,
-  openingHours: record.opening_hours,
+  accessKeys: record.access_keys,
+  recurrence: record.recurrence,
+  specificModalities: record.specific_modalities,
   conventionSignedAt: record.convention_signed_at,
   conventionExpiresAt: record.convention_expires_at,
   createdAt: record.created_at,

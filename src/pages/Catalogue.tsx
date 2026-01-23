@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { Layout } from '@/components/Layout';
 import { MSPCard } from '@/components/MSPCard';
 import { Theme, Status, THEMES, STATUSES, MSP } from '@/types/msp';
-import { DOMAINS } from '@/types/site';
+import { MANEUVER_TYPES } from '@/types/site';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -231,17 +231,17 @@ export default function Catalogue() {
 
               <div>
                 <label className="text-sm font-medium text-foreground mb-2 block">
-                  Domaine
+                  Type de manœuvre
                 </label>
                 <div className="flex flex-wrap gap-2">
-                  {DOMAINS.slice(0, 4).map((domain) => (
+                  {MANEUVER_TYPES.slice(0, 4).map((maneuver) => (
                     <Button
-                      key={domain}
-                      variant={domainFilter === domain ? 'default' : 'outline'}
+                      key={maneuver}
+                      variant={domainFilter === maneuver ? 'default' : 'outline'}
                       size="sm"
-                      onClick={() => setDomainFilter(domainFilter === domain ? null : domain)}
+                      onClick={() => setDomainFilter(domainFilter === maneuver ? null : maneuver)}
                     >
-                      {domain}
+                      {maneuver}
                     </Button>
                   ))}
                 </div>

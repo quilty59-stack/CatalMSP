@@ -292,17 +292,35 @@ export default function SiteDetail() {
           </div>
         </div>
 
-        {/* Domains */}
-        {site.domains.length > 0 && (
+        {/* Authorized Maneuvers */}
+        {site.authorizedManeuvers.length > 0 && (
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-base">Domaines d'activité</CardTitle>
+              <CardTitle className="text-base text-green-700">✓ Manœuvres autorisées</CardTitle>
             </CardHeader>
             <CardContent className="pt-0">
               <div className="flex flex-wrap gap-2">
-                {site.domains.map((domain) => (
-                  <Badge key={domain} variant="secondary">
-                    {domain}
+                {site.authorizedManeuvers.map((maneuver) => (
+                  <Badge key={maneuver} className="bg-green-100 text-green-800 hover:bg-green-200">
+                    {maneuver}
+                  </Badge>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Unauthorized Maneuvers */}
+        {site.unauthorizedManeuvers.length > 0 && (
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base text-red-700">✗ Manœuvres non autorisées</CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className="flex flex-wrap gap-2">
+                {site.unauthorizedManeuvers.map((maneuver) => (
+                  <Badge key={maneuver} className="bg-red-100 text-red-800 hover:bg-red-200">
+                    {maneuver}
                   </Badge>
                 ))}
               </div>
@@ -311,7 +329,7 @@ export default function SiteDetail() {
         )}
 
         {/* Contact */}
-        {(site.contactName || site.contactPhone || site.contactEmail) && (
+        {(site.contactName || site.contactPhone || site.contactPhoneLandline || site.contactEmail) && (
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-base">Contact</CardTitle>
@@ -326,7 +344,16 @@ export default function SiteDetail() {
                   className="flex items-center gap-2 text-primary hover:underline"
                 >
                   <Phone className="w-4 h-4" />
-                  {site.contactPhone}
+                  {site.contactPhone} (mobile)
+                </a>
+              )}
+              {site.contactPhoneLandline && (
+                <a 
+                  href={`tel:${site.contactPhoneLandline}`}
+                  className="flex items-center gap-2 text-primary hover:underline"
+                >
+                  <Phone className="w-4 h-4" />
+                  {site.contactPhoneLandline} (fixe)
                 </a>
               )}
               {site.contactEmail && (
@@ -342,18 +369,43 @@ export default function SiteDetail() {
           </Card>
         )}
 
-        {/* Opening Hours */}
-        {site.openingHours && (
+        {/* Access Keys */}
+        {site.accessKeys && (
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Clock className="w-4 h-4" />
-                Horaires d'accès
-              </CardTitle>
+              <CardTitle className="text-base">Accès / Clés</CardTitle>
             </CardHeader>
             <CardContent className="pt-0">
               <p className="text-sm text-muted-foreground whitespace-pre-line">
-                {site.openingHours}
+                {site.accessKeys}
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Recurrence */}
+        {site.recurrence && (
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Récurrence</CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <p className="text-sm text-muted-foreground whitespace-pre-line">
+                {site.recurrence}
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Specific Modalities */}
+        {site.specificModalities && (
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Modalités spécifiques</CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <p className="text-sm text-muted-foreground whitespace-pre-line">
+                {site.specificModalities}
               </p>
             </CardContent>
           </Card>

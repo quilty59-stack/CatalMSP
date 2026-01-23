@@ -10,7 +10,7 @@ import {
   SiteType, 
   SITE_TYPES, 
 } from '@/types/msp';
-import { DOMAINS } from '@/types/site';
+import { MANEUVER_TYPES, DEFAULT_UNAUTHORIZED_MANEUVERS } from '@/types/site';
 import { 
   ArrowLeft,
   Camera,
@@ -22,9 +22,12 @@ import {
   Phone,
   Mail,
   User,
-  Clock,
+  Key,
   FileText,
-  Calendar
+  Calendar,
+  RefreshCw,
+  CheckCircle,
+  XCircle
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -46,11 +49,15 @@ export default function CreateSite() {
     longitude: '',
     contactName: '',
     contactPhone: '',
+    contactPhoneLandline: '',
     contactEmail: '',
-    domains: [] as string[],
-    openingHours: '',
+    authorizedManeuvers: [] as string[],
+    unauthorizedManeuvers: [...DEFAULT_UNAUTHORIZED_MANEUVERS] as string[],
     notes: '',
     conventionNotes: '',
+    accessKeys: '',
+    recurrence: '',
+    specificModalities: '',
     conventionSignedAt: '',
     conventionExpiresAt: '',
   });
@@ -59,15 +66,32 @@ export default function CreateSite() {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const toggleDomain = (domain: string) => {
+  const toggleAuthorizedManeuver = (maneuver: string) => {
     setFormData((prev) => ({
       ...prev,
-      domains: prev.domains.includes(domain)
-        ? prev.domains.filter(d => d !== domain)
-        : [...prev.domains, domain]
+      authorizedManeuvers: prev.authorizedManeuvers.includes(maneuver)
+        ? prev.authorizedManeuvers.filter(m => m !== maneuver)
+        : [...prev.authorizedManeuvers, maneuver]
     }));
   };
 
+  const toggleUnauthorizedManeuver = (maneuver: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      unauthorizedManeuvers: prev.unauthorizedManeuvers.includes(maneuver)
+        ? prev.unauthorizedManeuvers.filter(m => m !== maneuver)
+        : [...prev.unauthorizedManeuvers, maneuver]
+    }));
+  };
+
+  const addCustomUnauthorized = (value: string) => {
+    if (value.trim() && !formData.unauthorizedManeuvers.includes(value.trim())) {
+      setFormData((prev) => ({
+        ...prev,
+        unauthorizedManeuvers: [...prev.unauthorizedManeuvers, value.trim()]
+      }));
+    }
+  };
 
   const handleGeolocation = async () => {
     if (!navigator.geolocation) {
@@ -180,9 +204,13 @@ export default function CreateSite() {
           longitude: formData.longitude ? parseFloat(formData.longitude) : null,
           contact_name: formData.contactName || null,
           contact_phone: formData.contactPhone || null,
+          contact_phone_landline: formData.contactPhoneLandline || null,
           contact_email: formData.contactEmail || null,
-          domains: formData.domains,
-          opening_hours: formData.openingHours || null,
+          authorized_maneuvers: formData.authorizedManeuvers,
+          unauthorized_maneuvers: formData.unauthorizedManeuvers,
+          access_keys: formData.accessKeys || null,
+          recurrence: formData.recurrence || null,
+          specific_modalities: formData.specificModalities || null,
           notes: formData.notes || null,
           convention_notes: formData.conventionNotes || null,
           convention_signed_at: formData.conventionSignedAt || null,
@@ -382,7 +410,7 @@ export default function CreateSite() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="contactPhone">Téléphone</Label>
+              <Label htmlFor="contactPhone">Téléphone mobile</Label>
               <div className="relative">
                 <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
@@ -390,6 +418,20 @@ export default function CreateSite() {
                   placeholder="06 12 34 56 78"
                   value={formData.contactPhone}
                   onChange={(e) => updateField('contactPhone', e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="contactPhoneLandline">Téléphone fixe</Label>
+              <div className="relative">
+                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  id="contactPhoneLandline"
+                  placeholder="04 67 12 34 56"
+                  value={formData.contactPhoneLandline}
+                  onChange={(e) => updateField('contactPhoneLandline', e.target.value)}
                   className="pl-10"
                 />
               </div>
@@ -412,41 +454,119 @@ export default function CreateSite() {
           </CardContent>
         </Card>
 
-        {/* Domains */}
+        {/* Access / Keys */}
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-base">Domaines d'activité</CardTitle>
+            <CardTitle className="text-base flex items-center gap-2">
+              <Key className="w-4 h-4" />
+              Accès / Clés
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <Textarea
+              placeholder="Ex: Clés à récupérer à l'accueil, digicode 1234A..."
+              value={formData.accessKeys}
+              onChange={(e) => updateField('accessKeys', e.target.value)}
+              rows={3}
+            />
+          </CardContent>
+        </Card>
+
+        {/* Recurrence */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <RefreshCw className="w-4 h-4" />
+              Récurrence
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <Textarea
+              placeholder="Ex: Disponible tous les lundis et mercredis..."
+              value={formData.recurrence}
+              onChange={(e) => updateField('recurrence', e.target.value)}
+              rows={2}
+            />
+          </CardContent>
+        </Card>
+
+        {/* Authorized Maneuvers */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <CheckCircle className="w-4 h-4 text-green-600" />
+              Manœuvres autorisées
+            </CardTitle>
           </CardHeader>
           <CardContent className="pt-0">
             <div className="flex flex-wrap gap-2">
-              {DOMAINS.map((domain) => (
+              {MANEUVER_TYPES.map((maneuver) => (
                 <Button
-                  key={domain}
+                  key={maneuver}
                   type="button"
-                  variant={formData.domains.includes(domain) ? 'default' : 'outline'}
+                  variant={formData.authorizedManeuvers.includes(maneuver) ? 'default' : 'outline'}
                   size="sm"
-                  onClick={() => toggleDomain(domain)}
+                  onClick={() => toggleAuthorizedManeuver(maneuver)}
+                  className={formData.authorizedManeuvers.includes(maneuver) ? 'bg-green-600 hover:bg-green-700' : ''}
                 >
-                  {domain}
+                  {maneuver}
                 </Button>
               ))}
             </div>
           </CardContent>
         </Card>
 
-        {/* Opening Hours */}
+        {/* Unauthorized Maneuvers */}
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
-              <Clock className="w-4 h-4" />
-              Horaires d'accès
+              <XCircle className="w-4 h-4 text-red-600" />
+              Manœuvres non autorisées
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0 space-y-4">
+            <div className="flex flex-wrap gap-2">
+              {formData.unauthorizedManeuvers.map((maneuver) => (
+                <Button
+                  key={maneuver}
+                  type="button"
+                  variant="default"
+                  size="sm"
+                  onClick={() => toggleUnauthorizedManeuver(maneuver)}
+                  className="bg-red-600 hover:bg-red-700"
+                >
+                  {maneuver} ×
+                </Button>
+              ))}
+            </div>
+            <div className="flex gap-2">
+              <Input
+                placeholder="Ajouter une restriction..."
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    addCustomUnauthorized((e.target as HTMLInputElement).value);
+                    (e.target as HTMLInputElement).value = '';
+                  }
+                }}
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Specific Modalities */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <FileText className="w-4 h-4" />
+              Modalités spécifiques
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-0">
             <Textarea
-              placeholder="Ex: Lundi-Vendredi : 8h-18h&#10;Samedi sur réservation"
-              value={formData.openingHours}
-              onChange={(e) => updateField('openingHours', e.target.value)}
+              placeholder="Ex: Prévenir 48h à l'avance, port du casque obligatoire..."
+              value={formData.specificModalities}
+              onChange={(e) => updateField('specificModalities', e.target.value)}
               rows={3}
             />
           </CardContent>
