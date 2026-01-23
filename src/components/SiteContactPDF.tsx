@@ -19,10 +19,11 @@ export const SiteContactPDF = forwardRef<HTMLDivElement, SiteContactPDFProps>(
     return (
       <div 
         ref={ref}
-        className="bg-white text-black p-8 w-[210mm] min-h-[297mm] font-sans text-sm"
+        className="bg-white text-black w-[210mm] min-h-[297mm] font-sans text-sm"
         style={{ 
           fontFamily: 'Arial, sans-serif',
           lineHeight: '1.4',
+          padding: '8mm 10mm',
         }}
       >
         {/* Header - Exact Excel blue: #1f4e79 */}
