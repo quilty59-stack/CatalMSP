@@ -25,16 +25,16 @@ export const SiteContactPDF = forwardRef<HTMLDivElement, SiteContactPDFProps>(
           lineHeight: '1.4',
         }}
       >
-        {/* Header - Exact Excel dark red: #C00000 */}
-        <div className="border-2 mb-6" style={{ borderColor: '#C00000' }}>
-          <div className="text-white px-4 py-3 text-center" style={{ backgroundColor: '#C00000' }}>
+        {/* Header - Exact Excel blue: #1f4e79 */}
+        <div className="border-2 mb-6" style={{ borderColor: '#1f4e79' }}>
+          <div className="text-white px-4 py-3 text-center" style={{ backgroundColor: '#1f4e79' }}>
             <h1 className="text-xl font-bold tracking-wide">FICHE CONTACT PARTENAIRE ET SITE DE MANŒUVRE</h1>
           </div>
         </div>
 
         {/* IDENTIFICATION DU PARTENAIRE */}
         <div className="mb-6">
-          <div className="text-white px-3 py-1.5 font-bold text-sm mb-0" style={{ backgroundColor: '#C00000' }}>
+          <div className="text-white px-3 py-1.5 font-bold text-sm mb-0" style={{ backgroundColor: '#1f4e79' }}>
             IDENTIFICATION DU PARTENAIRE
           </div>
           <div className="border border-gray-300 border-t-0">
@@ -101,7 +101,7 @@ export const SiteContactPDF = forwardRef<HTMLDivElement, SiteContactPDFProps>(
 
         {/* CONVENTION */}
         <div className="mb-6">
-          <div className="text-white px-3 py-1.5 font-bold text-sm mb-0" style={{ backgroundColor: '#C00000' }}>
+          <div className="text-white px-3 py-1.5 font-bold text-sm mb-0" style={{ backgroundColor: '#1f4e79' }}>
             CONVENTION
           </div>
           <div className="border border-gray-300 border-t-0 p-3">
@@ -134,7 +134,7 @@ export const SiteContactPDF = forwardRef<HTMLDivElement, SiteContactPDFProps>(
 
         {/* SITE DE MANŒUVRE */}
         <div className="mb-6">
-          <div className="text-white px-3 py-1.5 font-bold text-sm mb-0" style={{ backgroundColor: '#C00000' }}>
+          <div className="text-white px-3 py-1.5 font-bold text-sm mb-0" style={{ backgroundColor: '#1f4e79' }}>
             SITE DE MANŒUVRE
           </div>
           <div className="border border-gray-300 border-t-0">
@@ -217,7 +217,7 @@ export const SiteContactPDF = forwardRef<HTMLDivElement, SiteContactPDFProps>(
 
         {/* MODALITÉS D'ACCÈS ET UTILISATION */}
         <div className="mb-6">
-          <div className="text-white px-3 py-1.5 font-bold text-sm mb-0" style={{ backgroundColor: '#C00000' }}>
+          <div className="text-white px-3 py-1.5 font-bold text-sm mb-0" style={{ backgroundColor: '#1f4e79' }}>
             MODALITÉS D'ACCÈS ET UTILISATION
           </div>
           <div className="border border-gray-300 border-t-0 p-3 space-y-2">
@@ -238,7 +238,7 @@ export const SiteContactPDF = forwardRef<HTMLDivElement, SiteContactPDFProps>(
 
         {/* TYPES DE MANŒUVRES */}
         <div className="mb-6">
-          <div className="text-white px-3 py-1.5 font-bold text-sm mb-0" style={{ backgroundColor: '#C00000' }}>
+          <div className="text-white px-3 py-1.5 font-bold text-sm mb-0" style={{ backgroundColor: '#1f4e79' }}>
             TYPES DE MANŒUVRES
           </div>
           <div className="border border-gray-300 border-t-0 p-3">
