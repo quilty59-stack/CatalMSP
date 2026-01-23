@@ -4,10 +4,11 @@ import logoSrc from '@/assets/logo.png';
 
 interface SiteContactPDFProps {
   site: SiteConventionne;
+  mapImageBase64?: string; // Pre-loaded map image for PDF generation
 }
 
 export const SiteContactPDF = forwardRef<HTMLDivElement, SiteContactPDFProps>(
-  ({ site }, ref) => {
+  ({ site, mapImageBase64 }, ref) => {
     const formatDate = (dateStr?: string) => {
       if (!dateStr) return '___/___/______';
       return new Date(dateStr).toLocaleDateString('fr-FR');
@@ -188,18 +189,21 @@ export const SiteContactPDF = forwardRef<HTMLDivElement, SiteContactPDFProps>(
                     </div>
                   </div>
                   
-                  {/* Photo 3: Plan - Static map using free OpenStreetMap service */}
+                  {/* Photo 3: Plan - Static map */}
                   <div className="border border-gray-300 rounded overflow-hidden bg-white">
                     <div className="text-xs text-gray-500 px-2 py-1 bg-gray-100 border-b border-gray-200">
                       📷 Photo 3 : Plan
                     </div>
-                    {site.latitude && site.longitude ? (
+                    {mapImageBase64 ? (
                       <img 
-                        src={`https://staticmap.openstreetmap.de/staticmap.php?center=${site.latitude},${site.longitude}&zoom=17&size=300x120&maptype=mapnik&markers=${site.latitude},${site.longitude},red-pushpin`}
+                        src={mapImageBase64}
                         alt="Plan du site"
                         className="w-full h-16 object-cover"
-                        crossOrigin="anonymous"
                       />
+                    ) : site.latitude && site.longitude ? (
+                      <div className="h-16 flex items-center justify-center text-gray-500 text-xs">
+                        📍 {site.latitude.toFixed(5)}, {site.longitude.toFixed(5)}
+                      </div>
                     ) : (
                       <div className="h-16 flex items-center justify-center text-gray-400 text-xs">
                         Coordonnées GPS non disponibles
