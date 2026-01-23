@@ -144,7 +144,7 @@ export const SiteContactPDF = forwardRef<HTMLDivElement, SiteContactPDFProps>(
                 <div>
                   <span className="text-xs text-gray-500">Adresse du site :</span>
                   <div className="border-b border-gray-300 mt-1 pb-1 min-h-[20px]">
-                    {site.address}
+                    {site.address}{site.postalCode ? `, ${site.postalCode}` : ''} {site.commune}
                   </div>
                 </div>
                 <div>
@@ -155,13 +155,62 @@ export const SiteContactPDF = forwardRef<HTMLDivElement, SiteContactPDFProps>(
                 </div>
               </div>
               
-              {/* Right - Photos placeholder */}
+              {/* Right - Photos with actual content */}
               <div className="border-l border-gray-300 p-3 bg-gray-50">
                 <span className="text-xs text-gray-500 block mb-2">PHOTOS DU SITE</span>
-                <div className="space-y-2 text-xs text-gray-400">
-                  <div className="border border-dashed border-gray-300 p-2 rounded">📷 Photo 1 : Vue générale</div>
-                  <div className="border border-dashed border-gray-300 p-2 rounded">📷 Photo 2 : Accès</div>
-                  <div className="border border-dashed border-gray-300 p-2 rounded">📷 Photo 3 : Plan</div>
+                <div className="space-y-2">
+                  {/* Photo 1: Vue générale - Site photo */}
+                  <div className="border border-gray-300 rounded overflow-hidden bg-white">
+                    <div className="text-xs text-gray-500 px-2 py-1 bg-gray-100 border-b border-gray-200">
+                      📷 Photo 1 : Vue générale
+                    </div>
+                    {site.photoUrl ? (
+                      <img 
+                        src={site.photoUrl} 
+                        alt="Vue générale"
+                        className="w-full h-16 object-cover"
+                        crossOrigin="anonymous"
+                      />
+                    ) : (
+                      <div className="h-16 flex items-center justify-center text-gray-400 text-xs">
+                        Aucune photo
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Photo 2: Accès - Full address */}
+                  <div className="border border-gray-300 rounded overflow-hidden bg-white">
+                    <div className="text-xs text-gray-500 px-2 py-1 bg-gray-100 border-b border-gray-200">
+                      📷 Photo 2 : Accès
+                    </div>
+                    <div className="h-16 flex items-center justify-center text-gray-500 text-xs p-2 text-center">
+                      {site.address}{site.postalCode ? `\n${site.postalCode}` : ''} {site.commune}
+                    </div>
+                  </div>
+                  
+                  {/* Photo 3: Plan - Static map */}
+                  <div className="border border-gray-300 rounded overflow-hidden bg-white">
+                    <div className="text-xs text-gray-500 px-2 py-1 bg-gray-100 border-b border-gray-200">
+                      📷 Photo 3 : Plan
+                    </div>
+                    {site.latitude && site.longitude ? (
+                      <img 
+                        src={`https://www.openstreetmap.org/export/embed.html?bbox=${site.longitude - 0.005}%2C${site.latitude - 0.003}%2C${site.longitude + 0.005}%2C${site.latitude + 0.003}&layer=mapnik&marker=${site.latitude}%2C${site.longitude}`}
+                        alt="Plan du site"
+                        className="w-full h-16 object-cover"
+                        crossOrigin="anonymous"
+                        onError={(e) => {
+                          // Fallback to a static tile if embed fails
+                          const target = e.target as HTMLImageElement;
+                          target.src = `https://tile.openstreetmap.org/16/${Math.floor((site.longitude! + 180) / 360 * Math.pow(2, 16))}/${Math.floor((1 - Math.log(Math.tan(site.latitude! * Math.PI / 180) + 1 / Math.cos(site.latitude! * Math.PI / 180)) / Math.PI) / 2 * Math.pow(2, 16))}.png`;
+                        }}
+                      />
+                    ) : (
+                      <div className="h-16 flex items-center justify-center text-gray-400 text-xs">
+                        Coordonnées GPS non disponibles
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
