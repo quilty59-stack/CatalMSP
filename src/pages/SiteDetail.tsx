@@ -17,19 +17,40 @@ import {
   ExternalLink,
   Edit,
   Loader2,
-  AlertTriangle
+  AlertTriangle,
+  Download
 } from 'lucide-react';
 import { SITE_TYPES } from '@/types/msp';
 import { supabase } from '@/integrations/supabase/client';
 import { useEffect, useState } from 'react';
 import { MSP, Theme, Status } from '@/types/msp';
 import { MSPCard } from '@/components/MSPCard';
+import { SiteContactPDF } from '@/components/SiteContactPDF';
+import { useGenerateSitePDF } from '@/hooks/useGenerateSitePDF';
+import { toast } from 'sonner';
 
 export default function SiteDetail() {
   const { slug } = useParams<{ slug: string }>();
   const { site, isLoading, error } = useSite(slug);
   const [linkedMsps, setLinkedMsps] = useState<MSP[]>([]);
   const [loadingMsps, setLoadingMsps] = useState(true);
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+  const { contentRef, generatePDF } = useGenerateSitePDF();
+
+  const handleDownloadPDF = async () => {
+    if (!site) return;
+    
+    setIsGeneratingPDF(true);
+    try {
+      await generatePDF(site);
+      toast.success('Fiche contact téléchargée');
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast.error('Erreur lors de la génération du PDF');
+    } finally {
+      setIsGeneratingPDF(false);
+    }
+  };
 
   // Load MSPs linked to this site (by commune matching)
   useEffect(() => {
@@ -152,12 +173,33 @@ export default function SiteDetail() {
               Retour
             </Button>
           </Link>
-          <Link to={`/sites/${slug}/edit`}>
-            <Button variant="outline" size="sm" className="gap-2">
-              <Edit className="w-4 h-4" />
-              Modifier
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="gap-2"
+              onClick={handleDownloadPDF}
+              disabled={isGeneratingPDF}
+            >
+              {isGeneratingPDF ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Download className="w-4 h-4" />
+              )}
+              PDF
             </Button>
-          </Link>
+            <Link to={`/sites/${slug}/edit`}>
+              <Button variant="outline" size="sm" className="gap-2">
+                <Edit className="w-4 h-4" />
+                Modifier
+              </Button>
+            </Link>
+          </div>
+        </div>
+
+        {/* Hidden PDF Content for generation */}
+        <div className="fixed left-[-9999px] top-0">
+          <SiteContactPDF ref={contentRef} site={site} />
         </div>
 
         {/* Site Header with Map */}
