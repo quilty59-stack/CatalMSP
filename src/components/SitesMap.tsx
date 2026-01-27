@@ -1,8 +1,18 @@
 import { useEffect, useRef, useState } from 'react';
 import { SiteConventionne } from '@/types/site';
-import { MapPin, ExternalLink } from 'lucide-react';
+import { MapPin, Clock, Car, Truck, Bike, Footprints, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Link } from 'react-router-dom';
+import { Slider } from '@/components/ui/slider';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface SitesMapProps {
   sites: SiteConventionne[];
@@ -11,11 +21,27 @@ interface SitesMapProps {
   className?: string;
 }
 
+type TransportProfile = 'driving-car' | 'driving-hgv' | 'cycling-regular' | 'foot-walking';
+
+const TRANSPORT_PROFILES: { value: TransportProfile; label: string; icon: React.ReactNode }[] = [
+  { value: 'driving-car', label: 'Voiture', icon: <Car className="w-4 h-4" /> },
+  { value: 'driving-hgv', label: 'Camion (VSAV)', icon: <Truck className="w-4 h-4" /> },
+  { value: 'cycling-regular', label: 'Vélo', icon: <Bike className="w-4 h-4" /> },
+  { value: 'foot-walking', label: 'À pied', icon: <Footprints className="w-4 h-4" /> },
+];
+
 export function SitesMap({ sites, selectedSite, onSiteSelect, className = '' }: SitesMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
   const mapInstanceRef = useRef<any>(null);
   const markersRef = useRef<any[]>([]);
+  const isochroneLayerRef = useRef<any>(null);
+
+  // Isochrone controls
+  const [isochroneSite, setIsochroneSite] = useState<SiteConventionne | null>(null);
+  const [transportProfile, setTransportProfile] = useState<TransportProfile>('driving-car');
+  const [timeRange, setTimeRange] = useState(15); // minutes
+  const [isLoadingIsochrone, setIsLoadingIsochrone] = useState(false);
 
   // Calculate center from sites with coordinates
   const sitesWithCoords = sites.filter(s => s.latitude && s.longitude);
@@ -63,9 +89,10 @@ export function SitesMap({ sites, selectedSite, onSiteSelect, className = '' }: 
     const map = L.map(mapRef.current).setView([center.lat, center.lng], sitesWithCoords.length > 0 ? 7 : 5);
     mapInstanceRef.current = map;
 
-    // Add tile layer
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap contributors'
+    // Add tile layer - using OpenStreetMap France for better French coverage
+    L.tileLayer('https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap France',
+      maxZoom: 19,
     }).addTo(map);
 
     // Create custom icon
@@ -92,16 +119,29 @@ export function SitesMap({ sites, selectedSite, onSiteSelect, className = '' }: 
         icon: createIcon(isSelected)
       }).addTo(map);
 
-      // Create popup content
-      const popupContent = `
-        <div class="p-2 min-w-[200px]">
-          <h4 class="font-semibold text-sm mb-1">${site.name}</h4>
-          <p class="text-xs text-gray-600 mb-2">${site.commune}</p>
+      // Create popup content with isochrone button
+      const popupContent = document.createElement('div');
+      popupContent.className = 'p-2 min-w-[200px]';
+      popupContent.innerHTML = `
+        <h4 class="font-semibold text-sm mb-1">${site.name}</h4>
+        <p class="text-xs text-gray-600 mb-2">${site.commune}</p>
+        <div class="flex flex-col gap-2">
           <a href="/sites/${site.slug}" class="text-xs text-blue-600 hover:underline">
             Voir la fiche →
           </a>
         </div>
       `;
+      
+      // Add isochrone button
+      const isoButton = document.createElement('button');
+      isoButton.className = 'mt-2 w-full px-2 py-1 text-xs bg-primary text-white rounded hover:bg-primary/90 flex items-center justify-center gap-1';
+      isoButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg> Isochrone';
+      isoButton.onclick = () => {
+        setIsochroneSite(site);
+        marker.closePopup();
+      };
+      popupContent.appendChild(isoButton);
+      
       marker.bindPopup(popupContent);
 
       marker.on('click', () => {
@@ -127,6 +167,68 @@ export function SitesMap({ sites, selectedSite, onSiteSelect, className = '' }: 
     };
   }, [mapLoaded, sites, selectedSite, center.lat, center.lng]);
 
+  // Fetch and display isochrone
+  const fetchIsochrone = async () => {
+    if (!isochroneSite?.latitude || !isochroneSite?.longitude) {
+      toast.error("Ce site n'a pas de coordonnées GPS");
+      return;
+    }
+
+    setIsLoadingIsochrone(true);
+    const L = (window as any).L;
+
+    try {
+      const { data, error } = await supabase.functions.invoke('isochrone', {
+        body: {
+          latitude: isochroneSite.latitude,
+          longitude: isochroneSite.longitude,
+          profile: transportProfile,
+          range: timeRange,
+        },
+      });
+
+      if (error) throw error;
+
+      // Remove existing isochrone layer
+      if (isochroneLayerRef.current && mapInstanceRef.current) {
+        mapInstanceRef.current.removeLayer(isochroneLayerRef.current);
+      }
+
+      // Add new isochrone layer
+      if (data?.features && mapInstanceRef.current) {
+        const isochroneLayer = L.geoJSON(data, {
+          style: {
+            fillColor: '#3b82f6',
+            fillOpacity: 0.25,
+            color: '#1d4ed8',
+            weight: 2,
+          }
+        }).addTo(mapInstanceRef.current);
+
+        isochroneLayerRef.current = isochroneLayer;
+
+        // Fit map to isochrone bounds
+        mapInstanceRef.current.fitBounds(isochroneLayer.getBounds(), { padding: [30, 30] });
+
+        toast.success(`Isochrone ${timeRange} min affiché`);
+      }
+    } catch (error) {
+      console.error('Isochrone error:', error);
+      toast.error("Erreur lors du calcul de l'isochrone");
+    } finally {
+      setIsLoadingIsochrone(false);
+    }
+  };
+
+  // Clear isochrone
+  const clearIsochrone = () => {
+    if (isochroneLayerRef.current && mapInstanceRef.current) {
+      mapInstanceRef.current.removeLayer(isochroneLayerRef.current);
+      isochroneLayerRef.current = null;
+    }
+    setIsochroneSite(null);
+  };
+
   if (sitesWithCoords.length === 0) {
     return (
       <div className={`bg-muted rounded-xl flex items-center justify-center ${className}`}>
@@ -147,12 +249,95 @@ export function SitesMap({ sites, selectedSite, onSiteSelect, className = '' }: 
     <div className={`relative rounded-xl overflow-hidden ${className}`}>
       <div ref={mapRef} className="w-full h-full min-h-[300px]" />
       
+      {/* Isochrone Controls Panel */}
+      {isochroneSite && (
+        <div className="absolute top-4 right-4 bg-card/95 backdrop-blur-sm rounded-lg p-4 shadow-lg border border-border w-72 z-[1000]">
+          <div className="flex items-center justify-between mb-3">
+            <h4 className="font-semibold text-sm flex items-center gap-2">
+              <Clock className="w-4 h-4 text-primary" />
+              Isochrone
+            </h4>
+            <Button variant="ghost" size="sm" onClick={clearIsochrone} className="h-6 px-2 text-xs">
+              ✕
+            </Button>
+          </div>
+          
+          <p className="text-xs text-muted-foreground mb-3">
+            Depuis : <span className="font-medium text-foreground">{isochroneSite.name}</span>
+          </p>
+
+          <div className="space-y-3">
+            {/* Transport mode */}
+            <div className="space-y-1">
+              <Label className="text-xs">Mode de transport</Label>
+              <Select value={transportProfile} onValueChange={(v) => setTransportProfile(v as TransportProfile)}>
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {TRANSPORT_PROFILES.map((p) => (
+                    <SelectItem key={p.value} value={p.value} className="text-xs">
+                      <div className="flex items-center gap-2">
+                        {p.icon}
+                        {p.label}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Time range slider */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs">Durée de trajet</Label>
+                <span className="text-xs font-medium text-primary">{timeRange} min</span>
+              </div>
+              <Slider
+                value={[timeRange]}
+                onValueChange={(v) => setTimeRange(v[0])}
+                min={5}
+                max={60}
+                step={5}
+                className="w-full"
+              />
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>5 min</span>
+                <span>60 min</span>
+              </div>
+            </div>
+
+            {/* Calculate button */}
+            <Button 
+              onClick={fetchIsochrone} 
+              disabled={isLoadingIsochrone}
+              className="w-full h-8 text-xs"
+            >
+              {isLoadingIsochrone ? (
+                <>
+                  <Loader2 className="w-3 h-3 mr-2 animate-spin" />
+                  Calcul...
+                </>
+              ) : (
+                'Calculer l\'isochrone'
+              )}
+            </Button>
+          </div>
+        </div>
+      )}
+      
       {/* Legend */}
-      <div className="absolute bottom-4 left-4 bg-card/90 backdrop-blur-sm rounded-lg px-3 py-2 text-xs">
+      <div className="absolute bottom-4 left-4 bg-card/90 backdrop-blur-sm rounded-lg px-3 py-2 text-xs z-[1000]">
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 bg-destructive rounded-full" />
           <span>{sitesWithCoords.length} site{sitesWithCoords.length > 1 ? 's' : ''}</span>
         </div>
+        {isochroneLayerRef.current && (
+          <div className="flex items-center gap-2 mt-1 pt-1 border-t border-border">
+            <div className="w-3 h-3 bg-blue-500/50 border border-blue-700 rounded" />
+            <span>Zone {timeRange} min</span>
+          </div>
+        )}
       </div>
     </div>
   );
