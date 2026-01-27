@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { SiteConventionne } from '@/types/site';
-import { MapPin, Clock, Car, Truck, Bike, Footprints, Loader2 } from 'lucide-react';
+import { MapPin, Clock, Car, Truck, Bike, Footprints, Loader2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
@@ -220,7 +220,12 @@ export function SitesMap({ sites, selectedSite, onSiteSelect, className = '' }: 
     }
   };
 
-  // Clear isochrone
+  // Close panel without clearing isochrone
+  const closePanel = () => {
+    setIsochroneSite(null);
+  };
+
+  // Clear isochrone completely
   const clearIsochrone = () => {
     if (isochroneLayerRef.current && mapInstanceRef.current) {
       mapInstanceRef.current.removeLayer(isochroneLayerRef.current);
@@ -228,6 +233,9 @@ export function SitesMap({ sites, selectedSite, onSiteSelect, className = '' }: 
     }
     setIsochroneSite(null);
   };
+
+  // Track if isochrone is currently displayed
+  const hasIsochrone = isochroneLayerRef.current !== null;
 
   if (sitesWithCoords.length === 0) {
     return (
@@ -257,7 +265,7 @@ export function SitesMap({ sites, selectedSite, onSiteSelect, className = '' }: 
               <Clock className="w-4 h-4 text-primary" />
               Isochrone
             </h4>
-            <Button variant="ghost" size="sm" onClick={clearIsochrone} className="h-6 px-2 text-xs">
+            <Button variant="ghost" size="sm" onClick={closePanel} className="h-6 px-2 text-xs">
               ✕
             </Button>
           </div>
@@ -334,8 +342,16 @@ export function SitesMap({ sites, selectedSite, onSiteSelect, className = '' }: 
         </div>
         {isochroneLayerRef.current && (
           <div className="flex items-center gap-2 mt-1 pt-1 border-t border-border">
-            <div className="w-3 h-3 bg-blue-500/50 border border-blue-700 rounded" />
+            <div className="w-3 h-3 bg-primary/50 border border-primary rounded" />
             <span>Zone {timeRange} min</span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={clearIsochrone}
+              className="h-5 px-1.5 text-xs text-destructive hover:text-destructive ml-1"
+            >
+              <X className="w-3 h-3" />
+            </Button>
           </div>
         )}
       </div>
