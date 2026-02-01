@@ -4,7 +4,7 @@ import { BottomNav } from './BottomNav';
 import { DesktopSidebar } from './DesktopSidebar';
 import { DesktopHeader } from './DesktopHeader';
 
-interface LayoutProps {
+interface ResponsiveLayoutProps {
   children: ReactNode;
   headerTitle?: string;
   showBack?: boolean;
@@ -13,22 +13,21 @@ interface LayoutProps {
   showDesktopSearch?: boolean;
 }
 
-export function Layout({ 
+export function ResponsiveLayout({ 
   children, 
   headerTitle, 
   showBack = false, 
   backTo = '/',
   hideNav = false,
   showDesktopSearch = true
-}: LayoutProps) {
+}: ResponsiveLayoutProps) {
   return (
     <div className="min-h-screen bg-background">
-      {/* Desktop Sidebar */}
+      {/* Desktop Layout */}
       <DesktopSidebar />
       
       {/* Desktop Main Area */}
       <div className="lg:ml-64">
-        {/* Desktop Header */}
         <DesktopHeader 
           title={headerTitle} 
           showBack={showBack} 
@@ -43,14 +42,7 @@ export function Layout({
         
         {/* Main Content */}
         <main className={hideNav ? 'pb-4' : 'pb-24 lg:pb-8'}>
-          {/* Desktop container */}
-          <div className="hidden lg:block lg:p-8">
-            {children}
-          </div>
-          {/* Mobile content */}
-          <div className="lg:hidden">
-            {children}
-          </div>
+          {children}
         </main>
         
         {/* Mobile Bottom Nav */}
