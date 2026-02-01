@@ -1,6 +1,7 @@
 import { Link, useLocation } from 'react-router-dom';
 import { Home, FolderOpen, Plus, QrCode, Building2, Settings, HelpCircle, Map } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useDashboardStats } from '@/hooks/useDashboardStats';
 import logo from '@/assets/logo.png';
 
 const navItems = [
@@ -18,6 +19,7 @@ const secondaryItems = [
 
 export function DesktopSidebar() {
   const location = useLocation();
+  const { totalMsp, validatedMsp, isLoading } = useDashboardStats();
 
   return (
     <aside className="hidden lg:flex flex-col w-64 h-screen bg-sidebar-background border-r border-sidebar-border fixed left-0 top-0 z-40">
@@ -106,11 +108,15 @@ export function DesktopSidebar() {
         <div className="text-xs text-sidebar-foreground/60 mb-2">Statistiques</div>
         <div className="flex gap-4">
           <div>
-            <div className="text-xl font-bold text-sidebar-foreground">--</div>
+            <div className="text-xl font-bold text-sidebar-foreground">
+              {isLoading ? '...' : totalMsp}
+            </div>
             <div className="text-[10px] text-sidebar-foreground/60">Fiches</div>
           </div>
           <div>
-            <div className="text-xl font-bold text-success">--</div>
+            <div className="text-xl font-bold text-success">
+              {isLoading ? '...' : validatedMsp}
+            </div>
             <div className="text-[10px] text-sidebar-foreground/60">Validées</div>
           </div>
         </div>
