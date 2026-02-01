@@ -21,11 +21,10 @@ const EPICENTER = {
   address: "Route de Sancé, 71870 Hurigny"
 };
 
-// Permanent isochrone configuration
+// Permanent isochrone configuration - order matters: largest first, smallest last (on top)
 const PERMANENT_ISOCHRONES = [
-  { minutes: 15, color: '#3b82f6', fillColor: '#3b82f6', label: '15 min' }, // Blue
-  { minutes: 20, color: '#f97316', fillColor: '#f97316', label: '20 min' }, // Orange
-  { minutes: 30, color: '#ef4444', fillColor: '#ef4444', label: '30 min' }, // Red
+  { minutes: 20, color: '#f97316', fillColor: '#f97316', label: '20 min' }, // Orange - drawn first (bottom)
+  { minutes: 15, color: '#3b82f6', fillColor: '#3b82f6', label: '15 min' }, // Blue - drawn last (on top)
 ];
 
 interface SitesMapProps {
@@ -101,10 +100,8 @@ export function SitesMap({
     if (permanentIsochronesLoaded) return;
     
     try {
-      // Fetch all 3 isochrones in reverse order (largest first for proper layering)
-      const sortedIsochrones = [...PERMANENT_ISOCHRONES].sort((a, b) => b.minutes - a.minutes);
-      
-      for (const iso of sortedIsochrones) {
+      // Draw isochrones in order: first one at bottom, last one on top
+      for (const iso of PERMANENT_ISOCHRONES) {
         const { data, error } = await supabase.functions.invoke('isochrone', {
           body: {
             latitude: EPICENTER.lat,
@@ -120,13 +117,13 @@ export function SitesMap({
         }
 
         if (data?.features) {
+          // Use solid fill - the top layer will cover the center
           const layer = L.geoJSON(data, {
             style: {
               fillColor: iso.fillColor,
-              fillOpacity: 0.15,
+              fillOpacity: 0.35, // More opaque for better distinction
               color: iso.color,
               weight: 2,
-              dashArray: '5, 5',
             }
           }).addTo(map);
           
@@ -464,19 +461,21 @@ export function SitesMap({
           <span className="font-medium">CS</span>
         </div>
         
-        {/* Isochrones legend - horizontal */}
-        {PERMANENT_ISOCHRONES.map((iso) => (
-          <div key={iso.minutes} className="flex items-center gap-1.5">
-            <div 
-              className="w-3 h-3 rounded" 
-              style={{ 
-                backgroundColor: `${iso.fillColor}40`,
-                border: `2px dashed ${iso.color}`,
-              }} 
-            />
-            <span>{iso.label}</span>
-          </div>
-        ))}
+        {/* Isochrones legend - display in reading order (15 min first, then 20 min) */}
+        <div className="flex items-center gap-1.5">
+          <div 
+            className="w-3 h-3 rounded" 
+            style={{ backgroundColor: '#3b82f6', opacity: 0.6 }} 
+          />
+          <span>0-15 min</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div 
+            className="w-3 h-3 rounded" 
+            style={{ backgroundColor: '#f97316', opacity: 0.6 }} 
+          />
+          <span>15-20 min</span>
+        </div>
       </div>
       
       {/* Custom isochrone indicator if present */}
