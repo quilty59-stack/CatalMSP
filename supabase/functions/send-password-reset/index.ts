@@ -31,7 +31,7 @@ const handler = async (req: Request): Promise<Response> => {
     const displayName = firstName || "Utilisateur";
 
     const emailResponse = await resend.emails.send({
-      from: "CatalMSP <noreply@catalmsp.fr>",
+      from: "CatalMSP <nepasrepondre@catalmsp.fr>",
       to: [email],
       subject: "Réinitialisation de votre mot de passe CatalMSP",
       html: `
