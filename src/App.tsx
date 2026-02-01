@@ -13,6 +13,7 @@ import EditMSP from "./pages/EditMSP";
 import PublicMSP from "./pages/PublicMSP";
 import Scanner from "./pages/Scanner";
 import Sites from "./pages/Sites";
+import Carte from "./pages/Carte";
 import SiteDetail from "./pages/SiteDetail";
 import CreateSite from "./pages/CreateSite";
 import EditSite from "./pages/EditSite";
@@ -63,6 +64,7 @@ const App = () => {
               <Route path="/public/:slug" element={<PublicMSP />} />
               <Route path="/scanner" element={<Scanner />} />
               <Route path="/sites" element={<Sites />} />
+              <Route path="/carte" element={<Carte />} />
               <Route path="/sites/nouveau" element={<CreateSite />} />
               <Route path="/sites/:slug" element={<SiteDetail />} />
               <Route path="/sites/:slug/edit" element={<EditSite />} />
