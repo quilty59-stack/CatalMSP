@@ -10,10 +10,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, Shield, Users, CheckCircle, XCircle, Clock, UserCheck, UserX, Plus, Trash2, KeyRound } from 'lucide-react';
+import { MobileUserCard } from '@/components/admin/MobileUserCard';
 
 type AppRole = 'admin' | 'formateur' | 'pending';
 
@@ -32,9 +35,11 @@ export default function Admin() {
   const { isAdmin, isLoading: authLoading, session } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   const [users, setUsers] = useState<UserWithRole[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [updatingUser, setUpdatingUser] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'pending' | 'all'>('pending');
   
   // New user form
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -404,138 +409,208 @@ export default function Admin() {
           </Card>
         </div>
 
-        {/* Users Table */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Utilisateurs</CardTitle>
-            <CardDescription>
-              Liste de tous les utilisateurs inscrits
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <div className="flex justify-center py-8">
-                <Loader2 className="w-8 h-8 animate-spin text-primary" />
-              </div>
-            ) : users.length === 0 ? (
-              <p className="text-center text-muted-foreground py-8">
-                Aucun utilisateur inscrit
-              </p>
-            ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Nom</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Rôle</TableHead>
-                      <TableHead>Statut</TableHead>
-                      <TableHead>Inscrit le</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {users.map((user) => (
-                      <TableRow key={user.id}>
-                        <TableCell className="font-medium">
-                          {user.first_name} {user.last_name}
-                        </TableCell>
-                        <TableCell>{user.email}</TableCell>
-                        <TableCell>
-                          <Select
-                            value={user.role}
-                            onValueChange={(value: AppRole) => updateRole(user.user_id, value)}
-                            disabled={updatingUser === user.user_id}
-                          >
-                            <SelectTrigger className="w-[140px]">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="pending">En attente</SelectItem>
-                              <SelectItem value="formateur">Formateur</SelectItem>
-                              <SelectItem value="admin">Admin</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </TableCell>
-                        <TableCell>{getApprovalBadge(user.is_approved)}</TableCell>
-                        <TableCell>
-                          {new Date(user.created_at).toLocaleDateString('fr-FR')}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center justify-end gap-2">
-                            {updatingUser === user.user_id || updatingUser === user.email ? (
-                              <Loader2 className="w-4 h-4 animate-spin" />
-                            ) : (
-                              <>
-                                {/* Approval button */}
-                                {user.is_approved ? (
+        {/* Mobile: Tabbed Card View */}
+        {isMobile ? (
+          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'pending' | 'all')} className="w-full">
+            <TabsList className="grid w-full grid-cols-2 mb-4">
+              <TabsTrigger value="pending" className="relative">
+                En attente
+                {pendingCount > 0 && (
+                  <Badge variant="destructive" className="ml-2 h-5 w-5 p-0 flex items-center justify-center text-xs">
+                    {pendingCount}
+                  </Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="all">Tous ({users.length})</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="pending" className="space-y-3">
+              {isLoading ? (
+                <div className="flex justify-center py-8">
+                  <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                </div>
+              ) : users.filter(u => !u.is_approved).length === 0 ? (
+                <Card>
+                  <CardContent className="py-8 text-center">
+                    <CheckCircle className="w-12 h-12 mx-auto text-success mb-3" />
+                    <p className="text-muted-foreground">Aucune inscription en attente</p>
+                  </CardContent>
+                </Card>
+              ) : (
+                users
+                  .filter(u => !u.is_approved)
+                  .map((user) => (
+                    <MobileUserCard
+                      key={user.id}
+                      user={user}
+                      updatingUser={updatingUser}
+                      onUpdateApproval={updateApproval}
+                      onUpdateRole={updateRole}
+                      onResetPassword={resetPassword}
+                      onDeleteUser={deleteUser}
+                    />
+                  ))
+              )}
+            </TabsContent>
+            
+            <TabsContent value="all" className="space-y-3">
+              {isLoading ? (
+                <div className="flex justify-center py-8">
+                  <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                </div>
+              ) : users.length === 0 ? (
+                <p className="text-center text-muted-foreground py-8">
+                  Aucun utilisateur inscrit
+                </p>
+              ) : (
+                users.map((user) => (
+                  <MobileUserCard
+                    key={user.id}
+                    user={user}
+                    updatingUser={updatingUser}
+                    onUpdateApproval={updateApproval}
+                    onUpdateRole={updateRole}
+                    onResetPassword={resetPassword}
+                    onDeleteUser={deleteUser}
+                  />
+                ))
+              )}
+            </TabsContent>
+          </Tabs>
+        ) : (
+          /* Desktop: Table View */
+          <Card>
+            <CardHeader>
+              <CardTitle>Utilisateurs</CardTitle>
+              <CardDescription>
+                Liste de tous les utilisateurs inscrits
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                <div className="flex justify-center py-8">
+                  <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                </div>
+              ) : users.length === 0 ? (
+                <p className="text-center text-muted-foreground py-8">
+                  Aucun utilisateur inscrit
+                </p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Nom</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Rôle</TableHead>
+                        <TableHead>Statut</TableHead>
+                        <TableHead>Inscrit le</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {users.map((user) => (
+                        <TableRow key={user.id}>
+                          <TableCell className="font-medium">
+                            {user.first_name} {user.last_name}
+                          </TableCell>
+                          <TableCell>{user.email}</TableCell>
+                          <TableCell>
+                            <Select
+                              value={user.role}
+                              onValueChange={(value: AppRole) => updateRole(user.user_id, value)}
+                              disabled={updatingUser === user.user_id}
+                            >
+                              <SelectTrigger className="w-[140px]">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="pending">En attente</SelectItem>
+                                <SelectItem value="formateur">Formateur</SelectItem>
+                                <SelectItem value="admin">Admin</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </TableCell>
+                          <TableCell>{getApprovalBadge(user.is_approved)}</TableCell>
+                          <TableCell>
+                            {new Date(user.created_at).toLocaleDateString('fr-FR')}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center justify-end gap-2">
+                              {updatingUser === user.user_id || updatingUser === user.email ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <>
+                                  {/* Approval button */}
+                                  {user.is_approved ? (
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => updateApproval(user.user_id, false)}
+                                    >
+                                      <UserX className="w-4 h-4" />
+                                    </Button>
+                                  ) : (
+                                    <Button
+                                      size="sm"
+                                      onClick={() => updateApproval(user.user_id, true)}
+                                    >
+                                      <UserCheck className="w-4 h-4" />
+                                    </Button>
+                                  )}
+                                  
+                                  {/* Reset password */}
                                   <Button
                                     variant="outline"
                                     size="sm"
-                                    onClick={() => updateApproval(user.user_id, false)}
+                                    onClick={() => resetPassword(user.email, `${user.first_name} ${user.last_name}`)}
+                                    title="Réinitialiser le mot de passe"
                                   >
-                                    <UserX className="w-4 h-4" />
+                                    <KeyRound className="w-4 h-4" />
                                   </Button>
-                                ) : (
-                                  <Button
-                                    size="sm"
-                                    onClick={() => updateApproval(user.user_id, true)}
-                                  >
-                                    <UserCheck className="w-4 h-4" />
-                                  </Button>
-                                )}
-                                
-                                {/* Reset password */}
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => resetPassword(user.email, `${user.first_name} ${user.last_name}`)}
-                                  title="Réinitialiser le mot de passe"
-                                >
-                                  <KeyRound className="w-4 h-4" />
-                                </Button>
-                                
-                                {/* Delete user */}
-                                <AlertDialog>
-                                  <AlertDialogTrigger asChild>
-                                    <Button
-                                      variant="destructive"
-                                      size="sm"
-                                      title="Supprimer l'utilisateur"
-                                    >
-                                      <Trash2 className="w-4 h-4" />
-                                    </Button>
-                                  </AlertDialogTrigger>
-                                  <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                      <AlertDialogTitle>Supprimer l'utilisateur ?</AlertDialogTitle>
-                                      <AlertDialogDescription>
-                                        Cette action est irréversible. {user.first_name} {user.last_name} ({user.email}) sera définitivement supprimé.
-                                      </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                      <AlertDialogCancel>Annuler</AlertDialogCancel>
-                                      <AlertDialogAction
-                                        onClick={() => deleteUser(user.user_id, `${user.first_name} ${user.last_name}`)}
-                                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                  
+                                  {/* Delete user */}
+                                  <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                      <Button
+                                        variant="destructive"
+                                        size="sm"
+                                        title="Supprimer l'utilisateur"
                                       >
-                                        Supprimer
-                                      </AlertDialogAction>
-                                    </AlertDialogFooter>
-                                  </AlertDialogContent>
-                                </AlertDialog>
-                              </>
-                            )}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                                        <Trash2 className="w-4 h-4" />
+                                      </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                      <AlertDialogHeader>
+                                        <AlertDialogTitle>Supprimer l'utilisateur ?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                          Cette action est irréversible. {user.first_name} {user.last_name} ({user.email}) sera définitivement supprimé.
+                                        </AlertDialogDescription>
+                                      </AlertDialogHeader>
+                                      <AlertDialogFooter>
+                                        <AlertDialogCancel>Annuler</AlertDialogCancel>
+                                        <AlertDialogAction
+                                          onClick={() => deleteUser(user.user_id, `${user.first_name} ${user.last_name}`)}
+                                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                        >
+                                          Supprimer
+                                        </AlertDialogAction>
+                                      </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                  </AlertDialog>
+                                </>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
       </div>
     </ResponsiveLayout>
   );
