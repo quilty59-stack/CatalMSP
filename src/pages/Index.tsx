@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { FolderOpen, Plus, ChevronRight, Loader2, Building2, TrendingUp, Clock, MapPin, Settings, Menu, List } from 'lucide-react';
+import { FolderOpen, Plus, ChevronRight, Loader2, Building2, TrendingUp, Clock, MapPin, Settings, Menu, List, QrCode } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { MSPCard } from '@/components/MSPCard';
 import { MSP, Theme, Status } from '@/types/msp';
@@ -138,20 +138,19 @@ const Index = () => {
             </div>
           </motion.div>
 
-          {/* Quick Actions Grid */}
-          <div className="grid grid-cols-2 gap-3 mt-4">
+          {/* Quick Actions Grid - 3 columns for mobile */}
+          <div className="grid grid-cols-3 gap-2 mt-4">
             <Link to="/catalogue">
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.05 }}
-                className="bg-card rounded-xl p-4 border border-border shadow-sm"
+                className="bg-card rounded-xl p-3 border border-border shadow-sm text-center"
               >
-                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mb-2">
+                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mx-auto mb-2">
                   <FolderOpen className="w-5 h-5 text-primary" />
                 </div>
-                <p className="font-medium text-sm text-foreground">Catalogue MSP</p>
-                <p className="text-xs text-muted-foreground">{totalMsp} fiches</p>
+                <p className="font-medium text-xs text-foreground">Catalogue</p>
               </motion.div>
             </Link>
 
@@ -160,13 +159,12 @@ const Index = () => {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
-                className="bg-card rounded-xl p-4 border border-border shadow-sm"
+                className="bg-card rounded-xl p-3 border border-border shadow-sm text-center"
               >
-                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mb-2">
+                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mx-auto mb-2">
                   <List className="w-5 h-5 text-primary" />
                 </div>
-                <p className="font-medium text-sm text-foreground">Liste Sites</p>
-                <p className="text-xs text-muted-foreground">{totalSites} sites</p>
+                <p className="font-medium text-xs text-foreground">Sites</p>
               </motion.div>
             </Link>
 
@@ -175,13 +173,26 @@ const Index = () => {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.15 }}
-                className="bg-card rounded-xl p-4 border border-border shadow-sm"
+                className="bg-card rounded-xl p-3 border border-border shadow-sm text-center"
               >
-                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mb-2">
+                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mx-auto mb-2">
                   <MapPin className="w-5 h-5 text-primary" />
                 </div>
-                <p className="font-medium text-sm text-foreground">Carte Sites</p>
-                <p className="text-xs text-muted-foreground">Vue globale</p>
+                <p className="font-medium text-xs text-foreground">Carte</p>
+              </motion.div>
+            </Link>
+
+            <Link to="/scanner">
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="bg-card rounded-xl p-3 border border-border shadow-sm text-center"
+              >
+                <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center mx-auto mb-2">
+                  <QrCode className="w-5 h-5 text-accent" />
+                </div>
+                <p className="font-medium text-xs text-foreground">Scanner</p>
               </motion.div>
             </Link>
 
@@ -189,14 +200,27 @@ const Index = () => {
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-                className="bg-primary rounded-xl p-4 shadow-sm"
+                transition={{ delay: 0.25 }}
+                className="bg-primary rounded-xl p-3 shadow-sm text-center"
               >
-                <div className="w-10 h-10 rounded-lg bg-white/20 flex items-center justify-center mb-2">
+                <div className="w-10 h-10 rounded-lg bg-white/20 flex items-center justify-center mx-auto mb-2">
                   <Plus className="w-5 h-5 text-white" />
                 </div>
-                <p className="font-medium text-sm text-white">Créer MSP</p>
-                <p className="text-xs text-white/70">Nouvelle fiche</p>
+                <p className="font-medium text-xs text-white">Créer MSP</p>
+              </motion.div>
+            </Link>
+
+            <Link to="/sites/nouveau">
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                className="bg-secondary rounded-xl p-3 shadow-sm text-center"
+              >
+                <div className="w-10 h-10 rounded-lg bg-white/20 flex items-center justify-center mx-auto mb-2">
+                  <Building2 className="w-5 h-5 text-white" />
+                </div>
+                <p className="font-medium text-xs text-white">Nouveau site</p>
               </motion.div>
             </Link>
           </div>
@@ -387,23 +411,6 @@ const Index = () => {
               <h3 className="font-display font-semibold text-lg mb-1 text-foreground">Nouveau site</h3>
               <p className="text-sm text-muted-foreground">
                 Ajoutez un site conventionné au catalogue
-              </p>
-            </motion.div>
-          </Link>
-
-          <Link to="/scanner" className="col-span-1">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, delay: 0.6 }}
-              className="card-interactive p-6 h-full"
-            >
-              <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center mb-4">
-                <FolderOpen className="w-6 h-6 text-accent" />
-              </div>
-              <h3 className="font-display font-semibold text-lg mb-1 text-foreground">Scanner QR</h3>
-              <p className="text-sm text-muted-foreground">
-                Scannez un QR code pour accéder à une fiche
               </p>
             </motion.div>
           </Link>
