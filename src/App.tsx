@@ -17,6 +17,8 @@ import Carte from "./pages/Carte";
 import SiteDetail from "./pages/SiteDetail";
 import CreateSite from "./pages/CreateSite";
 import EditSite from "./pages/EditSite";
+import Settings from "./pages/Settings";
+import Aide from "./pages/Aide";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -68,6 +70,8 @@ const App = () => {
               <Route path="/sites/nouveau" element={<CreateSite />} />
               <Route path="/sites/:slug" element={<SiteDetail />} />
               <Route path="/sites/:slug/edit" element={<EditSite />} />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="/aide" element={<Aide />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
