@@ -30,7 +30,7 @@ const handler = async (req: Request): Promise<Response> => {
     const logoUrl = "https://msp-craft.lovable.app/logo.png";
     
     const emailResponse = await resend.emails.send({
-      from: "CatalMSP <noreply@catalmsp.fr>",
+      from: "CatalMSP <nepasrepondre@catalmsp.fr>",
       to: [email],
       subject: "Bienvenue sur CatalMSP - Inscription en attente de validation",
       html: `
