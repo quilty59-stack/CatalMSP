@@ -1,6 +1,7 @@
 import { Link, useLocation } from 'react-router-dom';
 import { ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { UserMenu } from '@/components/UserMenu';
 import logo from '@/assets/logo.png';
 
 interface HeaderProps {
@@ -11,7 +12,6 @@ interface HeaderProps {
 
 export function Header({ title, showBack = false, backTo = '/' }: HeaderProps) {
   const location = useLocation();
-  const isHome = location.pathname === '/';
 
   return (
     <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border pt-[env(safe-area-inset-top)]">
@@ -38,9 +38,7 @@ export function Header({ title, showBack = false, backTo = '/' }: HeaderProps) {
           </h1>
         )}
 
-        {!isHome && !showBack && (
-          <div className="w-20" /> // Spacer for centering
-        )}
+        <UserMenu />
       </div>
     </header>
   );
