@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { FolderOpen, Plus, ChevronRight, Loader2, Building2, TrendingUp, Clock, MapPin, Settings, Menu, List, QrCode, Moon, Info } from 'lucide-react';
+import { FolderOpen, Plus, ChevronRight, Loader2, Building2, TrendingUp, Clock, MapPin, Settings, Menu, List, QrCode, Moon, Info, Shield } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { MSPCard } from '@/components/MSPCard';
 import { MSP, Theme, Status } from '@/types/msp';
@@ -10,8 +10,10 @@ import { ResponsiveLayout } from '@/components/ResponsiveLayout';
 import { BottomNav } from '@/components/BottomNav';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useSites } from '@/hooks/useSites';
+import { useAuth } from '@/hooks/useAuth';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from '@/components/ui/drawer';
 import { Switch } from '@/components/ui/switch';
+import { UserMenu } from '@/components/UserMenu';
 import logo from '@/assets/logo.png';
 
 const Index = () => {
@@ -21,6 +23,7 @@ const Index = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const isMobile = useIsMobile();
   const { sites } = useSites();
+  const { isAdmin } = useAuth();
 
   useEffect(() => {
     loadMspFromDatabase();
@@ -95,11 +98,12 @@ const Index = () => {
       <div className="min-h-screen bg-muted/30 pb-24">
         {/* Header avec safe area pour les infos système (réseau, heure, batterie) */}
         <header className="bg-background pt-[env(safe-area-inset-top)]">
-          <div className="flex items-center justify-center h-16 px-4">
+          <div className="flex items-center justify-between h-16 px-4">
             <div className="flex items-center gap-3">
               <img src={logo} alt="CatalMSP" className="w-9 h-9" />
               <span className="font-display font-bold text-xl text-foreground">CatalMSP</span>
             </div>
+            <UserMenu />
           </div>
         </header>
 
@@ -376,6 +380,19 @@ const Index = () => {
                 <Building2 className="w-5 h-5" />
                 <span className="font-medium">Nouveau site</span>
               </Link>
+              {isAdmin && (
+                <>
+                  <div className="border-t border-border my-4" />
+                  <Link 
+                    to="/admin" 
+                    onClick={() => setMenuOpen(false)}
+                    className="flex items-center gap-3 p-4 rounded-xl bg-warning/10 text-warning border border-warning/20"
+                  >
+                    <Shield className="w-5 h-5" />
+                    <span className="font-medium">Administration</span>
+                  </Link>
+                </>
+              )}
             </nav>
           </DrawerContent>
         </Drawer>
