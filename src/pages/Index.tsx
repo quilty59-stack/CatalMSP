@@ -470,7 +470,7 @@ const Index = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Sites conventionnés</p>
-                <p className="text-3xl font-display font-bold text-secondary mt-1">--</p>
+                <p className="text-3xl font-display font-bold text-secondary mt-1">{totalSites}</p>
               </div>
               <div className="w-12 h-12 rounded-xl bg-secondary/10 flex items-center justify-center">
                 <Building2 className="w-6 h-6 text-secondary" />
