@@ -5,6 +5,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { SplashScreen } from "@/components/SplashScreen";
+import { AuthProvider } from "@/hooks/useAuth";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import Catalogue from "./pages/Catalogue";
 import CreateMSP from "./pages/CreateMSP";
@@ -19,6 +21,9 @@ import CreateSite from "./pages/CreateSite";
 import EditSite from "./pages/EditSite";
 import Settings from "./pages/Settings";
 import Aide from "./pages/Aide";
+import Login from "./pages/Login";
+import Signup from "./pages/Signup";
+import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -49,35 +54,46 @@ const App = () => {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        
-        {showSplash && <SplashScreen onComplete={handleSplashComplete} />}
-        
-        {appReady && (
-          <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/catalogue" element={<Catalogue />} />
-              <Route path="/creer" element={<CreateMSP />} />
-              <Route path="/msp/:slug" element={<MSPDetail />} />
-              <Route path="/msp/:slug/edit" element={<EditMSP />} />
-              <Route path="/public/:slug" element={<PublicMSP />} />
-              <Route path="/scanner" element={<Scanner />} />
-              <Route path="/sites" element={<Sites />} />
-              <Route path="/carte" element={<Carte />} />
-              <Route path="/sites/nouveau" element={<CreateSite />} />
-              <Route path="/sites/:slug" element={<SiteDetail />} />
-              <Route path="/sites/:slug/edit" element={<EditSite />} />
-              <Route path="/settings" element={<Settings />} />
-              <Route path="/aide" element={<Aide />} />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        )}
-      </TooltipProvider>
+      <AuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          
+          {showSplash && <SplashScreen onComplete={handleSplashComplete} />}
+          
+          {appReady && (
+            <BrowserRouter>
+              <Routes>
+                {/* Routes publiques */}
+                <Route path="/connexion" element={<Login />} />
+                <Route path="/inscription" element={<Signup />} />
+                <Route path="/public/:slug" element={<PublicMSP />} />
+                
+                {/* Routes protégées */}
+                <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+                <Route path="/catalogue" element={<ProtectedRoute><Catalogue /></ProtectedRoute>} />
+                <Route path="/creer" element={<ProtectedRoute><CreateMSP /></ProtectedRoute>} />
+                <Route path="/msp/:slug" element={<ProtectedRoute><MSPDetail /></ProtectedRoute>} />
+                <Route path="/msp/:slug/edit" element={<ProtectedRoute><EditMSP /></ProtectedRoute>} />
+                <Route path="/scanner" element={<ProtectedRoute><Scanner /></ProtectedRoute>} />
+                <Route path="/sites" element={<ProtectedRoute><Sites /></ProtectedRoute>} />
+                <Route path="/carte" element={<ProtectedRoute><Carte /></ProtectedRoute>} />
+                <Route path="/sites/nouveau" element={<ProtectedRoute><CreateSite /></ProtectedRoute>} />
+                <Route path="/sites/:slug" element={<ProtectedRoute><SiteDetail /></ProtectedRoute>} />
+                <Route path="/sites/:slug/edit" element={<ProtectedRoute><EditSite /></ProtectedRoute>} />
+                <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+                <Route path="/aide" element={<ProtectedRoute><Aide /></ProtectedRoute>} />
+                
+                {/* Route admin */}
+                <Route path="/admin" element={<ProtectedRoute requireAdmin><Admin /></ProtectedRoute>} />
+                
+                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </BrowserRouter>
+          )}
+        </TooltipProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 };

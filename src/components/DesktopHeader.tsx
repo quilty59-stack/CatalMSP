@@ -2,6 +2,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { ChevronLeft, Search, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { UserMenu } from '@/components/UserMenu';
 
 interface DesktopHeaderProps {
   title?: string;
@@ -27,6 +28,7 @@ export function DesktopHeader({
     if (path === '/sites') return 'Sites conventionnés';
     if (path === '/scanner') return 'Scanner QR';
     if (path === '/creer') return 'Nouvelle fiche MSP';
+    if (path === '/admin') return 'Administration';
     if (path.includes('/edit')) return 'Modifier';
     return 'CatalMSP';
   };
@@ -61,6 +63,7 @@ export function DesktopHeader({
           <Bell className="w-5 h-5" />
           <span className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full" />
         </Button>
+        <UserMenu />
       </div>
     </header>
   );
