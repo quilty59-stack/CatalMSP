@@ -477,12 +477,6 @@ export function SitesMap({
             <span>{iso.label}</span>
           </div>
         ))}
-        
-        {/* Sites count */}
-        <div className="flex items-center gap-1.5 pl-2 border-l border-border">
-          <div className="w-3 h-3 bg-destructive rounded-full" />
-          <span>{sitesWithCoords.length} sites</span>
-        </div>
       </div>
       
       {/* Custom isochrone indicator if present */}
