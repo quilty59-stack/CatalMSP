@@ -83,110 +83,112 @@ const Index = () => {
   const validatedMsp = mspList.filter(m => m.status === 'validee').length;
   const draftMsp = mspList.filter(m => m.status === 'brouillon').length;
 
-  // Mobile Layout
+  // Mobile Layout - Clean & Professional
   if (isMobile) {
     return (
-      <div className="min-h-screen bg-background">
-        {/* Hero Section - Mobile */}
-        <section className="hero-gradient px-4 pt-[calc(env(safe-area-inset-top)+1rem)] pb-10">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
-            className="text-center"
-          >
-            <motion.img 
-              src={logo} 
-              alt="CatalMSP" 
-              className="w-24 h-24 mx-auto mb-3 drop-shadow-lg"
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ duration: 0.5, type: "spring" }}
-            />
-            
-            <h1 className="font-display text-xl font-bold text-white mb-1">
-              CatalMSP
-            </h1>
-            <p className="text-white/70 text-xs">
-              Catalogue de Sites Conventionnés
-            </p>
-          </motion.div>
-
-          {/* Stats - Mobile */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.1 }}
-            className="flex justify-center gap-10 mt-5"
-          >
-            <div className="text-center">
-              <div className="text-3xl font-display font-bold text-white">{totalMsp}</div>
-              <div className="text-[10px] text-white/70 uppercase tracking-wider">Fiches</div>
+      <div className="min-h-screen bg-background pb-20">
+        {/* Compact Header */}
+        <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border pt-[env(safe-area-inset-top)]">
+          <div className="flex items-center justify-between h-12 px-4">
+            <div className="flex items-center gap-2">
+              <img src={logo} alt="CatalMSP" className="w-8 h-8" />
+              <span className="font-display font-bold text-base text-foreground">CatalMSP</span>
             </div>
-            <div className="w-px bg-white/20 h-10 self-center" />
-            <div className="text-center">
-              <div className="text-3xl font-display font-bold text-white">{validatedMsp}</div>
-              <div className="text-[10px] text-white/70 uppercase tracking-wider">Validées</div>
-            </div>
-          </motion.div>
-
-          {/* Install Button - Mobile */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.3, delay: 0.15 }}
-            className="flex justify-center mt-5"
-          >
             <InstallPWA />
-          </motion.div>
-        </section>
+          </div>
+        </header>
 
-        <div className="px-4 pt-4 space-y-4 pb-24">
-          {/* Recent MSP - Mobile */}
-          <motion.section
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: 0.25 }}
-          >
+        {/* Content */}
+        <div className="px-4 pt-4 space-y-5">
+          {/* Stats Row - Minimal */}
+          <div className="flex gap-3">
+            <div className="flex-1 bg-card rounded-xl p-3 border border-border">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">Fiches MSP</span>
+                <FolderOpen className="w-4 h-4 text-primary" />
+              </div>
+              <p className="text-2xl font-display font-bold text-foreground mt-1">{totalMsp}</p>
+            </div>
+            <div className="flex-1 bg-card rounded-xl p-3 border border-border">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">Validées</span>
+                <TrendingUp className="w-4 h-4 text-success" />
+              </div>
+              <p className="text-2xl font-display font-bold text-success mt-1">{validatedMsp}</p>
+            </div>
+          </div>
+
+          {/* Quick Action */}
+          <Link to="/creer">
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.2 }}
+              className="flex items-center gap-3 p-3 bg-primary/10 rounded-xl border border-primary/20"
+            >
+              <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
+                <Plus className="w-5 h-5 text-white" />
+              </div>
+              <div className="flex-1">
+                <p className="font-medium text-sm text-foreground">Nouvelle fiche MSP</p>
+                <p className="text-xs text-muted-foreground">Créer une mise en situation</p>
+              </div>
+              <ChevronRight className="w-5 h-5 text-muted-foreground" />
+            </motion.div>
+          </Link>
+
+          {/* Recent MSP */}
+          <section>
             <div className="flex items-center justify-between mb-3">
-              <h2 className="font-display font-semibold text-base text-foreground">
-                Fiches récentes
+              <h2 className="font-display font-semibold text-sm text-foreground">
+                Récentes
               </h2>
               <Link to="/catalogue">
-                <Button variant="ghost" size="sm" className="text-primary gap-1 h-8 px-2">
+                <Button variant="ghost" size="sm" className="text-primary h-7 px-2 text-xs">
                   Tout voir
-                  <ChevronRight className="w-4 h-4" />
                 </Button>
               </Link>
             </div>
-            <div className="space-y-3">
-              {isLoading ? (
-                <div className="flex items-center justify-center py-10">
-                  <Loader2 className="w-5 h-5 animate-spin text-primary" />
-                </div>
-              ) : recentMsp.length > 0 ? (
-                recentMsp.map((msp, index) => (
-                  <MSPCard key={msp.id} msp={msp} index={index} />
-                ))
-              ) : (
-                <div className="text-center py-10 card-elevated rounded-xl">
-                  <div className="w-14 h-14 rounded-full bg-muted mx-auto mb-3 flex items-center justify-center">
-                    <FolderOpen className="w-7 h-7 text-muted-foreground" />
-                  </div>
-                  <p className="text-muted-foreground text-sm mb-3">Aucune fiche MSP</p>
-                  <Link to="/creer">
-                    <Button size="sm" className="gap-2">
-                      <Plus className="w-4 h-4" />
-                      Créer une fiche
-                    </Button>
+            
+            {isLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="w-5 h-5 animate-spin text-primary" />
+              </div>
+            ) : recentMsp.length > 0 ? (
+              <div className="space-y-2">
+                {recentMsp.map((msp, index) => (
+                  <Link key={msp.id} to={`/msp/${msp.slug}`}>
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.2, delay: index * 0.05 }}
+                      className="flex items-center gap-3 p-3 bg-card rounded-xl border border-border hover:border-primary/30 transition-colors"
+                    >
+                      <div className={`w-2 h-2 rounded-full ${msp.status === 'validee' ? 'bg-success' : 'bg-warning'}`} />
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm text-foreground truncate">{msp.title}</p>
+                        <p className="text-xs text-muted-foreground truncate">{msp.siteName} • {msp.commune}</p>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+                    </motion.div>
                   </Link>
-                </div>
-              )}
-            </div>
-          </motion.section>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 bg-card rounded-xl border border-border">
+                <FolderOpen className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+                <p className="text-sm text-muted-foreground mb-3">Aucune fiche</p>
+                <Link to="/creer">
+                  <Button size="sm" className="gap-1.5">
+                    <Plus className="w-4 h-4" />
+                    Créer
+                  </Button>
+                </Link>
+              </div>
+            )}
+          </section>
         </div>
 
-        {/* Mobile Bottom Nav */}
         <BottomNav />
       </div>
     );
