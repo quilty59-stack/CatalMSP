@@ -91,10 +91,10 @@ const Index = () => {
       <div className="min-h-screen bg-muted/30 pb-24">
         {/* Header avec safe area pour les infos système (réseau, heure, batterie) */}
         <header className="bg-background pt-[env(safe-area-inset-top)]">
-          <div className="flex items-center justify-center h-11 px-4">
-            <div className="flex items-center gap-2">
-              <img src={logo} alt="CatalMSP" className="w-6 h-6" />
-              <span className="font-display font-semibold text-base text-foreground">CatalMSP</span>
+          <div className="flex items-center justify-center h-16 px-4">
+            <div className="flex items-center gap-3">
+              <img src={logo} alt="CatalMSP" className="w-9 h-9" />
+              <span className="font-display font-bold text-xl text-foreground">CatalMSP</span>
             </div>
           </div>
         </header>
