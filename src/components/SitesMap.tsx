@@ -14,6 +14,20 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
+// Epicenter configuration
+const EPICENTER = {
+  lat: 46.33764,
+  lng: 4.80803,
+  address: "Route de Sancé, 71870 Hurigny"
+};
+
+// Permanent isochrone configuration
+const PERMANENT_ISOCHRONES = [
+  { minutes: 15, color: '#3b82f6', fillColor: '#3b82f6', label: '15 min' }, // Blue
+  { minutes: 20, color: '#f97316', fillColor: '#f97316', label: '20 min' }, // Orange
+  { minutes: 30, color: '#ef4444', fillColor: '#ef4444', label: '30 min' }, // Red
+];
+
 interface SitesMapProps {
   sites: SiteConventionne[];
   selectedSite?: SiteConventionne | null;
@@ -46,23 +60,21 @@ export function SitesMap({
   const markersRef = useRef<any[]>([]);
   const labelsRef = useRef<any[]>([]);
   const isochroneLayerRef = useRef<any>(null);
+  const permanentIsochronesRef = useRef<any[]>([]);
+  const epicenterMarkerRef = useRef<any>(null);
 
   // Isochrone controls
   const [isochroneSite, setIsochroneSite] = useState<SiteConventionne | null>(null);
   const [transportProfile, setTransportProfile] = useState<TransportProfile>('driving-car');
   const [timeRange, setTimeRange] = useState(15); // minutes
   const [isLoadingIsochrone, setIsLoadingIsochrone] = useState(false);
+  const [permanentIsochronesLoaded, setPermanentIsochronesLoaded] = useState(false);
 
   // Calculate center from sites with coordinates
   const sitesWithCoords = sites.filter(s => s.latitude && s.longitude);
-  const defaultCenter = { lat: 46.603354, lng: 1.888334 }; // France center
   
-  const center = sitesWithCoords.length > 0
-    ? {
-        lat: sitesWithCoords.reduce((sum, s) => sum + (s.latitude || 0), 0) / sitesWithCoords.length,
-        lng: sitesWithCoords.reduce((sum, s) => sum + (s.longitude || 0), 0) / sitesWithCoords.length,
-      }
-    : defaultCenter;
+  // Use epicenter as default center
+  const center = EPICENTER;
 
   useEffect(() => {
     // Load Leaflet CSS
@@ -84,6 +96,50 @@ export function SitesMap({
     }
   }, []);
 
+  // Fetch permanent isochrones for epicenter
+  const fetchPermanentIsochrones = async (L: any, map: any) => {
+    if (permanentIsochronesLoaded) return;
+    
+    try {
+      // Fetch all 3 isochrones in reverse order (largest first for proper layering)
+      const sortedIsochrones = [...PERMANENT_ISOCHRONES].sort((a, b) => b.minutes - a.minutes);
+      
+      for (const iso of sortedIsochrones) {
+        const { data, error } = await supabase.functions.invoke('isochrone', {
+          body: {
+            latitude: EPICENTER.lat,
+            longitude: EPICENTER.lng,
+            profile: 'driving-car',
+            range: iso.minutes,
+          },
+        });
+
+        if (error) {
+          console.error(`Error fetching ${iso.minutes}min isochrone:`, error);
+          continue;
+        }
+
+        if (data?.features) {
+          const layer = L.geoJSON(data, {
+            style: {
+              fillColor: iso.fillColor,
+              fillOpacity: 0.15,
+              color: iso.color,
+              weight: 2,
+              dashArray: '5, 5',
+            }
+          }).addTo(map);
+          
+          permanentIsochronesRef.current.push(layer);
+        }
+      }
+      
+      setPermanentIsochronesLoaded(true);
+    } catch (error) {
+      console.error('Error fetching permanent isochrones:', error);
+    }
+  };
+
   useEffect(() => {
     if (!mapLoaded || !mapRef.current) return;
 
@@ -95,8 +151,8 @@ export function SitesMap({
       mapInstanceRef.current.remove();
     }
 
-    // Create map
-    const map = L.map(mapRef.current).setView([center.lat, center.lng], sitesWithCoords.length > 0 ? 7 : 5);
+    // Create map centered on epicenter
+    const map = L.map(mapRef.current).setView([center.lat, center.lng], 10);
     mapInstanceRef.current = map;
 
     // Add tile layer - use lighter tiles for better performance
@@ -113,7 +169,39 @@ export function SitesMap({
       maxZoom: 19,
     }).addTo(map);
 
-    // Create custom icon
+    // Add epicenter marker with app logo
+    const epicenterIcon = L.divIcon({
+      className: 'epicenter-marker',
+      html: `
+        <div class="relative">
+          <div class="w-14 h-14 bg-white rounded-full flex items-center justify-center shadow-xl border-4 border-primary ring-4 ring-primary/30">
+            <img src="/logo.png" alt="Épicentre" class="w-10 h-10 object-contain" />
+          </div>
+          <div class="absolute -bottom-1 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[10px] border-l-transparent border-r-[10px] border-r-transparent border-t-[12px] border-t-primary"></div>
+        </div>
+      `,
+      iconSize: [56, 68],
+      iconAnchor: [28, 68],
+    });
+
+    const epicenterMarker = L.marker([EPICENTER.lat, EPICENTER.lng], {
+      icon: epicenterIcon,
+      zIndexOffset: 1000,
+    }).addTo(map);
+
+    epicenterMarker.bindPopup(`
+      <div class="p-2 text-center">
+        <h4 class="font-bold text-sm mb-1">Centre de Secours</h4>
+        <p class="text-xs text-gray-600">${EPICENTER.address}</p>
+      </div>
+    `);
+
+    epicenterMarkerRef.current = epicenterMarker;
+
+    // Fetch permanent isochrones
+    fetchPermanentIsochrones(L, map);
+
+    // Create custom icon for sites
     const createIcon = (isSelected: boolean) => L.divIcon({
       className: 'custom-marker',
       html: `<div class="w-8 h-8 ${isSelected ? 'bg-primary' : 'bg-destructive'} rounded-full flex items-center justify-center shadow-lg border-2 border-white">
@@ -184,12 +272,14 @@ export function SitesMap({
       markersRef.current.push(marker);
     });
 
-    // Fit bounds if we have sites
-    if (sitesWithCoords.length > 1) {
-      const bounds = L.latLngBounds(sitesWithCoords.map(s => [s.latitude, s.longitude]));
+    // Fit bounds to include epicenter and all sites
+    if (sitesWithCoords.length > 0) {
+      const allPoints = [
+        [EPICENTER.lat, EPICENTER.lng],
+        ...sitesWithCoords.map(s => [s.latitude, s.longitude])
+      ];
+      const bounds = L.latLngBounds(allPoints);
       map.fitBounds(bounds, { padding: [50, 50] });
-    } else if (sitesWithCoords.length === 1) {
-      map.setView([sitesWithCoords[0].latitude, sitesWithCoords[0].longitude], 14);
     }
 
     return () => {
@@ -197,6 +287,8 @@ export function SitesMap({
         mapInstanceRef.current.remove();
         mapInstanceRef.current = null;
       }
+      permanentIsochronesRef.current = [];
+      setPermanentIsochronesLoaded(false);
     };
   }, [mapLoaded, sites, selectedSite, center.lat, center.lng, showLabels, lightMode]);
 
@@ -366,10 +458,36 @@ export function SitesMap({
       
       {/* Legend */}
       <div className="absolute bottom-4 left-4 bg-card/90 backdrop-blur-sm rounded-lg px-3 py-2 text-xs z-[1000]">
+        {/* Epicenter */}
+        <div className="flex items-center gap-2 mb-1 pb-1 border-b border-border">
+          <img src="/logo.png" alt="Centre" className="w-4 h-4" />
+          <span className="font-medium">Centre de Secours</span>
+        </div>
+        
+        {/* Permanent isochrones legend */}
+        <div className="space-y-1 mb-1 pb-1 border-b border-border">
+          {PERMANENT_ISOCHRONES.map((iso) => (
+            <div key={iso.minutes} className="flex items-center gap-2">
+              <div 
+                className="w-3 h-3 rounded border-2" 
+                style={{ 
+                  backgroundColor: `${iso.fillColor}30`,
+                  borderColor: iso.color,
+                  borderStyle: 'dashed'
+                }} 
+              />
+              <span>{iso.label}</span>
+            </div>
+          ))}
+        </div>
+        
+        {/* Sites count */}
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 bg-destructive rounded-full" />
           <span>{sitesWithCoords.length} site{sitesWithCoords.length > 1 ? 's' : ''}</span>
         </div>
+        
+        {/* Custom isochrone if present */}
         {isochroneLayerRef.current && (
           <div className="flex items-center gap-2 mt-1 pt-1 border-t border-border">
             <div className="w-3 h-3 bg-primary/50 border border-primary rounded" />
