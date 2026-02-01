@@ -456,40 +456,39 @@ export function SitesMap({
         </div>
       )}
       
-      {/* Legend */}
-      <div className="absolute bottom-4 left-4 bg-card/90 backdrop-blur-sm rounded-lg px-3 py-2 text-xs z-[1000]">
+      {/* Legend - positioned next to zoom controls (top-left) */}
+      <div className="absolute top-4 left-14 bg-card/95 backdrop-blur-sm rounded-lg px-3 py-2 text-xs z-[1000] flex items-center gap-4">
         {/* Epicenter */}
-        <div className="flex items-center gap-2 mb-1 pb-1 border-b border-border">
+        <div className="flex items-center gap-1.5">
           <img src="/logo.png" alt="Centre" className="w-4 h-4" />
-          <span className="font-medium">Centre de Secours</span>
+          <span className="font-medium">CS</span>
         </div>
         
-        {/* Permanent isochrones legend */}
-        <div className="space-y-1 mb-1 pb-1 border-b border-border">
-          {PERMANENT_ISOCHRONES.map((iso) => (
-            <div key={iso.minutes} className="flex items-center gap-2">
-              <div 
-                className="w-3 h-3 rounded border-2" 
-                style={{ 
-                  backgroundColor: `${iso.fillColor}30`,
-                  borderColor: iso.color,
-                  borderStyle: 'dashed'
-                }} 
-              />
-              <span>{iso.label}</span>
-            </div>
-          ))}
-        </div>
+        {/* Isochrones legend - horizontal */}
+        {PERMANENT_ISOCHRONES.map((iso) => (
+          <div key={iso.minutes} className="flex items-center gap-1.5">
+            <div 
+              className="w-3 h-3 rounded" 
+              style={{ 
+                backgroundColor: `${iso.fillColor}40`,
+                border: `2px dashed ${iso.color}`,
+              }} 
+            />
+            <span>{iso.label}</span>
+          </div>
+        ))}
         
         {/* Sites count */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 pl-2 border-l border-border">
           <div className="w-3 h-3 bg-destructive rounded-full" />
-          <span>{sitesWithCoords.length} site{sitesWithCoords.length > 1 ? 's' : ''}</span>
+          <span>{sitesWithCoords.length} sites</span>
         </div>
-        
-        {/* Custom isochrone if present */}
-        {isochroneLayerRef.current && (
-          <div className="flex items-center gap-2 mt-1 pt-1 border-t border-border">
+      </div>
+      
+      {/* Custom isochrone indicator if present */}
+      {isochroneLayerRef.current && (
+        <div className="absolute bottom-4 left-4 bg-card/95 backdrop-blur-sm rounded-lg px-3 py-2 text-xs z-[1000]">
+          <div className="flex items-center gap-2">
             <div className="w-3 h-3 bg-primary/50 border border-primary rounded" />
             <span>Zone {timeRange} min</span>
             <Button
@@ -501,8 +500,8 @@ export function SitesMap({
               <X className="w-3 h-3" />
             </Button>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }
