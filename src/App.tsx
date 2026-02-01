@@ -24,6 +24,7 @@ import Aide from "./pages/Aide";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import Admin from "./pages/Admin";
+import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -67,6 +68,7 @@ const App = () => {
                 {/* Routes publiques */}
                 <Route path="/connexion" element={<Login />} />
                 <Route path="/inscription" element={<Signup />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/public/:slug" element={<PublicMSP />} />
                 
                 {/* Routes protégées */}
