@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { FolderOpen, Plus, ChevronRight, Loader2, Building2, TrendingUp, Clock, MapPin, Settings, Menu, List, QrCode } from 'lucide-react';
+import { FolderOpen, Plus, ChevronRight, Loader2, Building2, TrendingUp, Clock, MapPin, Settings, Menu, List, QrCode, X, Moon, Sun, Info } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { MSPCard } from '@/components/MSPCard';
 import { MSP, Theme, Status } from '@/types/msp';
@@ -10,6 +10,8 @@ import { ResponsiveLayout } from '@/components/ResponsiveLayout';
 import { BottomNav } from '@/components/BottomNav';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useSites } from '@/hooks/useSites';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { Switch } from '@/components/ui/switch';
 import logo from '@/assets/logo.png';
 
 const Index = () => {
@@ -116,12 +118,81 @@ const Index = () => {
                 </div>
               </div>
               <div className="flex items-center gap-1">
-                <Button variant="ghost" size="icon" className="text-white/70 hover:text-white hover:bg-white/10 h-8 w-8">
-                  <Settings className="w-4 h-4" />
-                </Button>
-                <Button variant="ghost" size="icon" className="text-white/70 hover:text-white hover:bg-white/10 h-8 w-8">
-                  <Menu className="w-4 h-4" />
-                </Button>
+                {/* Settings Sheet */}
+                <Sheet>
+                  <SheetTrigger asChild>
+                    <Button variant="ghost" size="icon" className="text-white/70 hover:text-white hover:bg-white/10 h-8 w-8">
+                      <Settings className="w-4 h-4" />
+                    </Button>
+                  </SheetTrigger>
+                  <SheetContent side="bottom" className="rounded-t-2xl">
+                    <SheetHeader>
+                      <SheetTitle className="text-left">Paramètres</SheetTitle>
+                    </SheetHeader>
+                    <div className="py-4 space-y-4">
+                      <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <Moon className="w-5 h-5 text-muted-foreground" />
+                          <span className="text-sm font-medium">Mode sombre</span>
+                        </div>
+                        <Switch />
+                      </div>
+                      <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <Info className="w-5 h-5 text-muted-foreground" />
+                          <div>
+                            <span className="text-sm font-medium">Version</span>
+                            <p className="text-xs text-muted-foreground">1.0.0</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </SheetContent>
+                </Sheet>
+
+                {/* Menu Sheet */}
+                <Sheet>
+                  <SheetTrigger asChild>
+                    <Button variant="ghost" size="icon" className="text-white/70 hover:text-white hover:bg-white/10 h-8 w-8">
+                      <Menu className="w-4 h-4" />
+                    </Button>
+                  </SheetTrigger>
+                  <SheetContent side="right" className="w-[280px]">
+                    <SheetHeader>
+                      <SheetTitle className="flex items-center gap-2">
+                        <img src={logo} alt="CatalMSP" className="w-8 h-8" />
+                        CatalMSP
+                      </SheetTitle>
+                    </SheetHeader>
+                    <nav className="py-6 space-y-2">
+                      <Link to="/catalogue" className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors">
+                        <FolderOpen className="w-5 h-5 text-primary" />
+                        <span className="font-medium">Catalogue MSP</span>
+                      </Link>
+                      <Link to="/sites" className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors">
+                        <List className="w-5 h-5 text-primary" />
+                        <span className="font-medium">Liste des sites</span>
+                      </Link>
+                      <Link to="/carte" className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors">
+                        <MapPin className="w-5 h-5 text-primary" />
+                        <span className="font-medium">Carte</span>
+                      </Link>
+                      <Link to="/scanner" className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors">
+                        <QrCode className="w-5 h-5 text-primary" />
+                        <span className="font-medium">Scanner QR</span>
+                      </Link>
+                      <div className="border-t border-border my-4" />
+                      <Link to="/creer" className="flex items-center gap-3 p-3 rounded-lg bg-primary text-white hover:bg-primary/90 transition-colors">
+                        <Plus className="w-5 h-5" />
+                        <span className="font-medium">Nouvelle MSP</span>
+                      </Link>
+                      <Link to="/sites/nouveau" className="flex items-center gap-3 p-3 rounded-lg bg-secondary text-white hover:bg-secondary/90 transition-colors">
+                        <Building2 className="w-5 h-5" />
+                        <span className="font-medium">Nouveau site</span>
+                      </Link>
+                    </nav>
+                  </SheetContent>
+                </Sheet>
               </div>
             </div>
             
