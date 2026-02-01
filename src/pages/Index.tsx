@@ -88,38 +88,30 @@ const Index = () => {
   // Mobile Layout - Dashboard Style
   if (isMobile) {
     return (
-      <div className="min-h-screen bg-muted/30 pb-24">
-        {/* Header */}
-        <header className="bg-primary pt-[env(safe-area-inset-top)]">
-          <div className="flex items-center justify-between h-12 px-4">
-            <div className="flex items-center gap-2">
-              <img src={logo} alt="CatalMSP" className="w-7 h-7" />
-              <span className="font-display font-bold text-base text-white">CatalMSP</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button variant="ghost" size="icon" className="text-white/80 hover:text-white hover:bg-white/10 h-8 w-8">
-                <Settings className="w-4 h-4" />
-              </Button>
-              <Button variant="ghost" size="icon" className="text-white/80 hover:text-white hover:bg-white/10 h-8 w-8">
-                <Menu className="w-4 h-4" />
-              </Button>
-            </div>
-          </div>
-        </header>
-
+      <div className="min-h-screen bg-muted/30 pb-24 pt-[env(safe-area-inset-top)]">
         {/* Content */}
-        <div className="px-4 -mt-0">
+        <div className="px-4">
           {/* Dashboard Card */}
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             className="bg-primary rounded-2xl p-4 shadow-lg mt-3"
           >
-            <div className="flex items-center gap-2 mb-3">
-              <img src={logo} alt="" className="w-8 h-8" />
-              <div>
-                <h2 className="font-display font-bold text-white text-base">Tableau de bord</h2>
-                <p className="text-white/60 text-xs">Vue d'ensemble</p>
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <img src={logo} alt="" className="w-8 h-8" />
+                <div>
+                  <h2 className="font-display font-bold text-white text-base">Tableau de bord</h2>
+                  <p className="text-white/60 text-xs">Vue d'ensemble</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-1">
+                <Button variant="ghost" size="icon" className="text-white/70 hover:text-white hover:bg-white/10 h-8 w-8">
+                  <Settings className="w-4 h-4" />
+                </Button>
+                <Button variant="ghost" size="icon" className="text-white/70 hover:text-white hover:bg-white/10 h-8 w-8">
+                  <Menu className="w-4 h-4" />
+                </Button>
               </div>
             </div>
             
