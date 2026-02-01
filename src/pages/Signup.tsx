@@ -67,12 +67,19 @@ export default function Signup() {
 
     // Send welcome email and admin notification
     try {
-      await Promise.all([
+      const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+      const headers = {
+        'Content-Type': 'application/json',
+        'apikey': anonKey,
+        'Authorization': `Bearer ${anonKey}`,
+      };
+
+      const results = await Promise.allSettled([
         fetch(
           `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-welcome-email`,
           {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers,
             body: JSON.stringify({ email, firstName, lastName }),
           }
         ),
@@ -80,11 +87,21 @@ export default function Signup() {
           `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-admin-notification`,
           {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers,
             body: JSON.stringify({ userEmail: email, firstName, lastName }),
           }
         ),
       ]);
+
+      // Log results for debugging
+      results.forEach((result, index) => {
+        const functionName = index === 0 ? 'send-welcome-email' : 'send-admin-notification';
+        if (result.status === 'rejected') {
+          console.error(`${functionName} failed:`, result.reason);
+        } else {
+          console.log(`${functionName} succeeded:`, result.value.status);
+        }
+      });
     } catch (emailError) {
       console.error('Failed to send emails:', emailError);
     }
