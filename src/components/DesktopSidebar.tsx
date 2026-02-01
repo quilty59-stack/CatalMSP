@@ -1,7 +1,8 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Home, FolderOpen, Plus, QrCode, Building2, Settings, HelpCircle, Map } from 'lucide-react';
+import { Home, FolderOpen, Plus, QrCode, Building2, Settings, HelpCircle, Map, Shield } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
+import { useAuth } from '@/hooks/useAuth';
 import logo from '@/assets/logo.png';
 
 const navItems = [
@@ -20,6 +21,7 @@ const secondaryItems = [
 export function DesktopSidebar() {
   const location = useLocation();
   const { totalMsp, validatedMsp, isLoading } = useDashboardStats();
+  const { isAdmin } = useAuth();
 
   return (
     <aside className="hidden lg:flex flex-col w-64 h-screen bg-sidebar-background border-r border-sidebar-border fixed left-0 top-0 z-40">
@@ -81,6 +83,20 @@ export function DesktopSidebar() {
         <div className="text-xs font-medium text-sidebar-foreground/50 uppercase tracking-wider px-3 py-2">
           Plus
         </div>
+        {isAdmin && (
+          <Link
+            to="/admin"
+            className={cn(
+              'flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200',
+              location.pathname === '/admin'
+                ? 'bg-sidebar-primary text-sidebar-primary-foreground' 
+                : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
+            )}
+          >
+            <Shield className="w-5 h-5" />
+            <span className="font-medium">Administration</span>
+          </Link>
+        )}
         {secondaryItems.map((item) => {
           const isActive = location.pathname === item.path;
           const Icon = item.icon;
