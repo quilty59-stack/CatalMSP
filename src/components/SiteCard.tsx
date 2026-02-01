@@ -8,12 +8,59 @@ import { SITE_TYPES } from '@/types/msp';
 interface SiteCardProps {
   site: SiteConventionne;
   index?: number;
+  compact?: boolean;
 }
 
-export function SiteCard({ site, index = 0 }: SiteCardProps) {
+export function SiteCard({ site, index = 0, compact = false }: SiteCardProps) {
   const isConventionValid = site.conventionExpiresAt 
     ? new Date(site.conventionExpiresAt) > new Date() 
     : true;
+
+  // Compact version for map overlay
+  if (compact) {
+    return (
+      <Link to={`/sites/${site.slug}`} className="block">
+        <div className="card-elevated p-3 hover:shadow-lg transition-shadow">
+          <div className="flex items-center gap-3">
+            {/* Small Photo */}
+            <div className="w-12 h-12 shrink-0 rounded-lg overflow-hidden bg-muted">
+              {site.photoUrl ? (
+                <img 
+                  src={site.photoUrl} 
+                  alt={site.name}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center">
+                  <Building2 className="w-5 h-5 text-muted-foreground" />
+                </div>
+              )}
+            </div>
+
+            {/* Compact Info */}
+            <div className="flex-1 min-w-0">
+              <h3 className="font-semibold text-sm text-foreground truncate">
+                {site.name}
+              </h3>
+              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                <MapPin className="w-3 h-3" />
+                <span className="truncate">{site.commune}</span>
+              </div>
+            </div>
+
+            {/* Badges */}
+            <div className="flex gap-1">
+              {site.authorizedManeuvers.slice(0, 1).map((maneuver) => (
+                <Badge key={maneuver} variant="secondary" className="text-[10px]">
+                  {maneuver}
+                </Badge>
+              ))}
+            </div>
+          </div>
+        </div>
+      </Link>
+    );
+  }
 
   return (
     <motion.div

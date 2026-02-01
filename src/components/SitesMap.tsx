@@ -19,6 +19,8 @@ interface SitesMapProps {
   selectedSite?: SiteConventionne | null;
   onSiteSelect?: (site: SiteConventionne) => void;
   className?: string;
+  showLabels?: boolean;
+  lightMode?: boolean;
 }
 
 type TransportProfile = 'driving-car' | 'driving-hgv' | 'cycling-regular' | 'foot-walking';
@@ -30,11 +32,19 @@ const TRANSPORT_PROFILES: { value: TransportProfile; label: string; icon: React.
   { value: 'foot-walking', label: 'À pied', icon: <Footprints className="w-4 h-4" /> },
 ];
 
-export function SitesMap({ sites, selectedSite, onSiteSelect, className = '' }: SitesMapProps) {
+export function SitesMap({ 
+  sites, 
+  selectedSite, 
+  onSiteSelect, 
+  className = '',
+  showLabels = false,
+  lightMode = false
+}: SitesMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
   const mapInstanceRef = useRef<any>(null);
   const markersRef = useRef<any[]>([]);
+  const labelsRef = useRef<any[]>([]);
   const isochroneLayerRef = useRef<any>(null);
 
   // Isochrone controls
@@ -89,9 +99,17 @@ export function SitesMap({ sites, selectedSite, onSiteSelect, className = '' }: 
     const map = L.map(mapRef.current).setView([center.lat, center.lng], sitesWithCoords.length > 0 ? 7 : 5);
     mapInstanceRef.current = map;
 
-    // Add tile layer - using OpenStreetMap France for better French coverage
-    L.tileLayer('https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap France',
+    // Add tile layer - use lighter tiles for better performance
+    const tileUrl = lightMode 
+      ? 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
+      : 'https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png';
+    
+    const attribution = lightMode 
+      ? '© <a href="https://www.openstreetmap.org/copyright">OSM</a> © <a href="https://carto.com/">CARTO</a>'
+      : '© OpenStreetMap France';
+
+    L.tileLayer(tileUrl, {
+      attribution,
       maxZoom: 19,
     }).addTo(map);
 
@@ -108,9 +126,11 @@ export function SitesMap({ sites, selectedSite, onSiteSelect, className = '' }: 
       iconAnchor: [16, 32],
     });
 
-    // Clear existing markers
+    // Clear existing markers and labels
     markersRef.current.forEach(m => m.remove());
     markersRef.current = [];
+    labelsRef.current.forEach(l => l.remove());
+    labelsRef.current = [];
 
     // Add markers for sites with coordinates
     sitesWithCoords.forEach((site) => {
@@ -119,17 +139,30 @@ export function SitesMap({ sites, selectedSite, onSiteSelect, className = '' }: 
         icon: createIcon(isSelected)
       }).addTo(map);
 
-      // Create popup content with isochrone button
+      // Add label with site name if showLabels is true
+      if (showLabels) {
+        const label = L.divIcon({
+          className: 'site-label',
+          html: `<div class="px-2 py-1 bg-card/95 backdrop-blur-sm text-xs font-medium rounded shadow-md border border-border whitespace-nowrap max-w-[150px] truncate">${site.name}</div>`,
+          iconSize: [150, 24],
+          iconAnchor: [-8, 16],
+        });
+        const labelMarker = L.marker([site.latitude, site.longitude], { 
+          icon: label,
+          interactive: false
+        }).addTo(map);
+        labelsRef.current.push(labelMarker);
+      }
+
+      // Create popup content - simplified
       const popupContent = document.createElement('div');
-      popupContent.className = 'p-2 min-w-[200px]';
+      popupContent.className = 'p-2 min-w-[180px]';
       popupContent.innerHTML = `
         <h4 class="font-semibold text-sm mb-1">${site.name}</h4>
         <p class="text-xs text-gray-600 mb-2">${site.commune}</p>
-        <div class="flex flex-col gap-2">
-          <a href="/sites/${site.slug}" class="text-xs text-blue-600 hover:underline">
-            Voir la fiche →
-          </a>
-        </div>
+        <a href="/sites/${site.slug}" class="text-xs text-blue-600 hover:underline">
+          Voir la fiche →
+        </a>
       `;
       
       // Add isochrone button
@@ -142,7 +175,7 @@ export function SitesMap({ sites, selectedSite, onSiteSelect, className = '' }: 
       };
       popupContent.appendChild(isoButton);
       
-      marker.bindPopup(popupContent);
+      marker.bindPopup(popupContent, { closeButton: true, maxWidth: 200 });
 
       marker.on('click', () => {
         onSiteSelect?.(site);
@@ -165,7 +198,7 @@ export function SitesMap({ sites, selectedSite, onSiteSelect, className = '' }: 
         mapInstanceRef.current = null;
       }
     };
-  }, [mapLoaded, sites, selectedSite, center.lat, center.lng]);
+  }, [mapLoaded, sites, selectedSite, center.lat, center.lng, showLabels, lightMode]);
 
   // Fetch and display isochrone
   const fetchIsochrone = async () => {
@@ -199,7 +232,7 @@ export function SitesMap({ sites, selectedSite, onSiteSelect, className = '' }: 
         const isochroneLayer = L.geoJSON(data, {
           style: {
             fillColor: '#3b82f6',
-            fillOpacity: 0.25,
+            fillOpacity: 0.2,
             color: '#1d4ed8',
             weight: 2,
           }
@@ -234,9 +267,6 @@ export function SitesMap({ sites, selectedSite, onSiteSelect, className = '' }: 
     setIsochroneSite(null);
   };
 
-  // Track if isochrone is currently displayed
-  const hasIsochrone = isochroneLayerRef.current !== null;
-
   if (sitesWithCoords.length === 0) {
     return (
       <div className={`bg-muted rounded-xl flex items-center justify-center ${className}`}>
@@ -254,7 +284,7 @@ export function SitesMap({ sites, selectedSite, onSiteSelect, className = '' }: 
   }
 
   return (
-    <div className={`relative rounded-xl overflow-hidden ${className}`}>
+    <div className={`relative overflow-hidden ${className}`}>
       <div ref={mapRef} className="w-full h-full min-h-[300px]" />
       
       {/* Isochrone Controls Panel */}

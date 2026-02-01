@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Home, FolderOpen, Plus, QrCode, Building2 } from 'lucide-react';
+import { Home, FolderOpen, Plus, QrCode, Building2, Map } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navItems = [
@@ -7,7 +7,7 @@ const navItems = [
   { icon: FolderOpen, label: 'MSP', path: '/catalogue' },
   { icon: Plus, label: 'Créer', path: '/creer', accent: true },
   { icon: Building2, label: 'Sites', path: '/sites' },
-  { icon: QrCode, label: 'Scanner', path: '/scanner' },
+  { icon: Map, label: 'Carte', path: '/carte' },
 ];
 
 export function BottomNav() {

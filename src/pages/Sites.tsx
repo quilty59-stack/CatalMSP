@@ -1,14 +1,12 @@
 import { useState, useMemo } from 'react';
 import { Layout } from '@/components/Layout';
 import { SiteCard } from '@/components/SiteCard';
-import { SitesMap } from '@/components/SitesMap';
 import { useSites } from '@/hooks/useSites';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Search, Filter, X, Loader2, Map, List, Plus } from 'lucide-react';
+import { Search, Filter, X, Loader2, Map, Plus } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MANEUVER_TYPES, SiteConventionne } from '@/types/site';
+import { MANEUVER_TYPES } from '@/types/site';
 import { Link } from 'react-router-dom';
 
 export default function Sites() {
@@ -17,8 +15,6 @@ export default function Sites() {
   const [domainFilter, setDomainFilter] = useState<string | null>(null);
   const [communeFilter, setCommuneFilter] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
-  const [selectedSite, setSelectedSite] = useState<SiteConventionne | null>(null);
-  const [viewMode, setViewMode] = useState<'map' | 'list'>('map');
 
   // Get unique communes from sites
   const communes = useMemo(() => {
@@ -55,15 +51,23 @@ export default function Sites() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-bold text-foreground">Sites conventionnés</h1>
-          <Link to="/sites/nouveau">
-            <Button size="sm" className="gap-2">
-              <Plus className="w-4 h-4" />
-              Ajouter
-            </Button>
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link to="/carte">
+              <Button variant="outline" size="sm" className="gap-2">
+                <Map className="w-4 h-4" />
+                <span className="hidden sm:inline">Carte</span>
+              </Button>
+            </Link>
+            <Link to="/sites/nouveau">
+              <Button size="sm" className="gap-2">
+                <Plus className="w-4 h-4" />
+                <span className="hidden sm:inline">Ajouter</span>
+              </Button>
+            </Link>
+          </div>
         </div>
 
-        {/* Search and View Toggle */}
+        {/* Search and Filter */}
         <div className="flex gap-2">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -81,24 +85,6 @@ export default function Sites() {
           >
             <Filter className="w-4 h-4" />
           </Button>
-          <div className="flex bg-muted rounded-lg p-1">
-            <Button
-              variant={viewMode === 'map' ? 'secondary' : 'ghost'}
-              size="icon"
-              className="h-8 w-8"
-              onClick={() => setViewMode('map')}
-            >
-              <Map className="w-4 h-4" />
-            </Button>
-            <Button
-              variant={viewMode === 'list' ? 'secondary' : 'ghost'}
-              size="icon"
-              className="h-8 w-8"
-              onClick={() => setViewMode('list')}
-            >
-              <List className="w-4 h-4" />
-            </Button>
-          </div>
         </div>
 
         {/* Filters Panel */}
@@ -181,69 +167,32 @@ export default function Sites() {
           </div>
         )}
 
-        {/* Content */}
+        {/* Sites List */}
         {!isLoading && !error && (
-          <>
-            {viewMode === 'map' ? (
-              <div className="space-y-4">
-                <SitesMap 
-                  sites={filteredSites}
-                  selectedSite={selectedSite}
-                  onSiteSelect={setSelectedSite}
-                  className="h-[400px]"
-                />
-                
-                {/* Selected site card */}
-                {selectedSite && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                  >
-                    <SiteCard site={selectedSite} />
-                  </motion.div>
-                )}
-
-                {/* Sites list below map */}
-                <div className="space-y-3">
-                  <h2 className="text-sm font-medium text-muted-foreground">
-                    Tous les sites ({filteredSites.length})
-                  </h2>
-                  {filteredSites.map((site, index) => (
-                    <SiteCard 
-                      key={site.id} 
-                      site={site} 
-                      index={index}
-                    />
-                  ))}
-                </div>
-              </div>
+          <div className="space-y-3">
+            {filteredSites.length > 0 ? (
+              filteredSites.map((site, index) => (
+                <SiteCard key={site.id} site={site} index={index} />
+              ))
             ) : (
-              <div className="space-y-3">
-                {filteredSites.length > 0 ? (
-                  filteredSites.map((site, index) => (
-                    <SiteCard key={site.id} site={site} index={index} />
-                  ))
-                ) : (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="text-center py-12"
-                  >
-                    <p className="text-muted-foreground">
-                      Aucun site trouvé
-                    </p>
-                    <Button
-                      variant="link"
-                      onClick={clearFilters}
-                      className="mt-2"
-                    >
-                      Réinitialiser les filtres
-                    </Button>
-                  </motion.div>
-                )}
-              </div>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="text-center py-12"
+              >
+                <p className="text-muted-foreground">
+                  Aucun site trouvé
+                </p>
+                <Button
+                  variant="link"
+                  onClick={clearFilters}
+                  className="mt-2"
+                >
+                  Réinitialiser les filtres
+                </Button>
+              </motion.div>
             )}
-          </>
+          </div>
         )}
       </div>
     </Layout>
