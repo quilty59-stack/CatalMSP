@@ -53,6 +53,11 @@ export default function Signup() {
     }
 
     setIsLoading(true);
+    
+    // Prepare email data before signup
+    const emailData = { email, firstName, lastName };
+    const adminData = { userEmail: email, firstName, lastName };
+    
     const { error } = await signUp(email, password, firstName, lastName);
 
     if (error) {
@@ -65,43 +70,42 @@ export default function Signup() {
       return;
     }
 
-    // Send welcome email and admin notification
-    try {
-      const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-      const headers = {
-        'Content-Type': 'application/json',
-        'apikey': anonKey,
-        'Authorization': `Bearer ${anonKey}`,
-      };
+    // Send welcome email and admin notification immediately after successful signup
+    const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const headers = {
+      'Content-Type': 'application/json',
+      'apikey': anonKey,
+      'Authorization': `Bearer ${anonKey}`,
+    };
 
-      const results = await Promise.allSettled([
-        fetch(
-          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-welcome-email`,
-          {
-            method: 'POST',
-            headers,
-            body: JSON.stringify({ email, firstName, lastName }),
-          }
-        ),
-        fetch(
-          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-admin-notification`,
-          {
-            method: 'POST',
-            headers,
-            body: JSON.stringify({ userEmail: email, firstName, lastName }),
-          }
-        ),
+    // Use Promise.allSettled to send both emails
+    try {
+      const [welcomeResult, adminResult] = await Promise.allSettled([
+        fetch(`${supabaseUrl}/functions/v1/send-welcome-email`, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify(emailData),
+        }),
+        fetch(`${supabaseUrl}/functions/v1/send-admin-notification`, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify(adminData),
+        }),
       ]);
 
       // Log results for debugging
-      results.forEach((result, index) => {
-        const functionName = index === 0 ? 'send-welcome-email' : 'send-admin-notification';
-        if (result.status === 'rejected') {
-          console.error(`${functionName} failed:`, result.reason);
-        } else {
-          console.log(`${functionName} succeeded:`, result.value.status);
-        }
-      });
+      if (welcomeResult.status === 'fulfilled') {
+        console.log('Welcome email status:', welcomeResult.value.status);
+      } else {
+        console.error('Welcome email failed:', welcomeResult.reason);
+      }
+
+      if (adminResult.status === 'fulfilled') {
+        console.log('Admin notification status:', adminResult.value.status);
+      } else {
+        console.error('Admin notification failed:', adminResult.reason);
+      }
     } catch (emailError) {
       console.error('Failed to send emails:', emailError);
     }
@@ -124,12 +128,11 @@ export default function Signup() {
             <Alert>
               <Info className="w-4 h-4" />
               <AlertDescription>
-                Vérifiez votre email pour confirmer votre compte. 
-                Ensuite, un administrateur devra approuver votre demande d'accès.
+                Votre inscription a bien été enregistrée. Un administrateur doit maintenant valider votre compte avant que vous puissiez vous connecter.
               </AlertDescription>
             </Alert>
             <p className="text-center text-muted-foreground text-sm">
-              Vous recevrez une notification une fois votre compte approuvé.
+              Vous recevrez un email dès que votre compte sera validé.
             </p>
           </CardContent>
           <CardFooter>

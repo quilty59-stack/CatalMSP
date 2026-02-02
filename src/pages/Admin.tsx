@@ -210,6 +210,9 @@ export default function Admin() {
   const updateApproval = async (userId: string, isApproved: boolean) => {
     setUpdatingUser(userId);
     try {
+      // Get user info first for the email
+      const user = users.find(u => u.user_id === userId);
+      
       const { error } = await supabase
         .from('profiles')
         .update({ is_approved: isApproved })
@@ -224,11 +227,35 @@ export default function Admin() {
           .eq('user_id', userId);
       }
 
+      // Send approval/rejection email
+      if (user) {
+        try {
+          await fetch(
+            `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-approval-email`,
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${session?.access_token}`,
+              },
+              body: JSON.stringify({
+                email: user.email,
+                firstName: user.first_name,
+                lastName: user.last_name,
+                isApproved,
+              }),
+            }
+          );
+        } catch (emailError) {
+          console.error('Failed to send approval email:', emailError);
+        }
+      }
+
       toast({
         title: isApproved ? 'Utilisateur approuvé' : 'Utilisateur refusé',
         description: isApproved 
-          ? "L'utilisateur peut maintenant accéder à l'application"
-          : "L'accès a été retiré à l'utilisateur",
+          ? "L'utilisateur a été notifié par email"
+          : "L'utilisateur a été notifié par email",
       });
 
       await loadUsers();
