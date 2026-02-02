@@ -18,7 +18,7 @@ export default defineConfig(({ mode }) => ({
     mode === "development" && componentTagger(),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["logo.png", "favicon.ico"],
+      includeAssets: ["logo.png", "favicon.ico", "sw-push.js"],
       manifest: {
         name: "CatalMSP - Catalogue MSP",
         short_name: "CatalMSP",
@@ -46,6 +46,8 @@ export default defineConfig(({ mode }) => ({
       },
       workbox: {
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
+        // Import push notification handler in service worker
+        importScripts: ['/sw-push.js'],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/.*\.supabase\.co\/.*/i,
