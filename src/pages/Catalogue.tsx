@@ -10,10 +10,13 @@ import { Label } from '@/components/ui/label';
 import { Search, Filter, X, Loader2, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { sendNotification } from '@/hooks/useNotifications';
 import { toast } from 'sonner';
 import { z } from 'zod';
 
 export default function Catalogue() {
+  const { isAdmin } = useAuth();
   const [search, setSearch] = useState('');
   const [themeFilter, setThemeFilter] = useState<Theme | null>(null);
   const [statusFilter, setStatusFilter] = useState<Status | null>(null);
@@ -74,6 +77,7 @@ export default function Catalogue() {
           equipment: record.equipment || [],
           otherEquipment: record.other_equipment || '',
           photos: [],
+          createdBy: record.created_by || undefined,
           createdAt: record.created_at,
           updatedAt: record.updated_at,
         }));
@@ -93,6 +97,9 @@ export default function Catalogue() {
       return;
     }
 
+    // Find the MSP to get its title and creator
+    const mspToDelete = dbMspList.find(m => m.id === id);
+
     try {
       // First delete associated photos
       await supabase
@@ -110,6 +117,20 @@ export default function Catalogue() {
         console.error('Error deleting MSP:', error);
         toast.error('Erreur lors de la suppression');
         return;
+      }
+
+      // Send notification to the creator if admin deleted it and creator exists
+      if (isAdmin && mspToDelete?.createdBy) {
+        await sendNotification({
+          type: 'msp_rejected',
+          title: 'Votre MSP a été refusée',
+          message: `Votre MSP "${mspToDelete.title}" a été refusée par un administrateur.`,
+          targetUserId: mspToDelete.createdBy,
+          metadata: {
+            mspId: id,
+            mspTitle: mspToDelete.title,
+          },
+        });
       }
 
       // Update local state

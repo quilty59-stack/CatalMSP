@@ -72,6 +72,7 @@ export function useMsp(slug: string | undefined) {
             otherEquipment: data.other_equipment || '',
             photos: [],
             publicUrl: data.public_url || '',
+            createdBy: data.created_by || undefined,
             createdAt: data.created_at,
             updatedAt: data.updated_at,
           };
