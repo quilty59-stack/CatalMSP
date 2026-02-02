@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useNotifications, Notification } from '@/hooks/useNotifications';
+import { toast } from 'sonner';
 import { 
   Bell, 
   Check, 
@@ -134,6 +135,33 @@ export default function Notifications() {
   
   const [filter, setFilter] = useState<string>('all');
   const [activeTab, setActiveTab] = useState<'all' | 'unread'>('all');
+  const [isCleaning, setIsCleaning] = useState(false);
+
+  const handleCleanup = async (daysOld: number) => {
+    // Give immediate user feedback when nothing matches the cutoff.
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - daysOld);
+
+    const matchingCount = notifications.filter((n) => {
+      const created = new Date(n.created_at);
+      return created.getTime() < cutoff.getTime();
+    }).length;
+
+    if (matchingCount === 0) {
+      toast('Aucune notification de plus de 30 jours à supprimer.');
+      return;
+    }
+
+    setIsCleaning(true);
+    try {
+      await deleteOldNotifications(daysOld);
+      toast.success(`${matchingCount} notification${matchingCount > 1 ? 's' : ''} supprimée${matchingCount > 1 ? 's' : ''}.`);
+    } catch (e) {
+      toast.error('Erreur lors du nettoyage des notifications.');
+    } finally {
+      setIsCleaning(false);
+    }
+  };
 
   const handleNavigate = (link: string) => {
     navigate(link);
@@ -196,13 +224,23 @@ export default function Notifications() {
                 <AlertDialogHeader>
                   <AlertDialogTitle>Supprimer les anciennes notifications</AlertDialogTitle>
                   <AlertDialogDescription>
-                    Voulez-vous supprimer toutes les notifications de plus de 30 jours ?
+                    Voulez-vous supprimer toutes les notifications de plus de 30 jours ? (Les notifications récentes seront conservées.)
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>Annuler</AlertDialogCancel>
-                  <AlertDialogAction onClick={() => deleteOldNotifications(30)}>
-                    Supprimer
+                  <AlertDialogAction
+                    onClick={() => void handleCleanup(30)}
+                    disabled={isCleaning}
+                  >
+                    {isCleaning ? (
+                      <span className="inline-flex items-center gap-2">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Suppression…
+                      </span>
+                    ) : (
+                      'Supprimer'
+                    )}
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
