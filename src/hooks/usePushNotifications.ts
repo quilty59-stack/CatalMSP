@@ -57,10 +57,21 @@ export function usePushNotifications(): UsePushNotificationsReturn {
       if (!isSupported) return;
 
       try {
-        const registration = await navigator.serviceWorker.ready;
-        const existingSubscription = await registration.pushManager.getSubscription();
-        if (existingSubscription) {
-          setSubscription(existingSubscription);
+        // Wait for service worker to be ready with timeout
+        const timeoutPromise = new Promise<null>((_, reject) => 
+          setTimeout(() => reject(new Error('Service worker timeout')), 5000)
+        );
+        
+        const registration = await Promise.race([
+          navigator.serviceWorker.ready,
+          timeoutPromise
+        ]) as ServiceWorkerRegistration;
+        
+        if (registration) {
+          const existingSubscription = await registration.pushManager.getSubscription();
+          if (existingSubscription) {
+            setSubscription(existingSubscription);
+          }
         }
       } catch (err) {
         console.error('Error checking existing subscription:', err);
@@ -120,7 +131,30 @@ export function usePushNotifications(): UsePushNotificationsReturn {
     setError(null);
 
     try {
-      const registration = await navigator.serviceWorker.ready;
+      // Ensure service worker is registered
+      let registration: ServiceWorkerRegistration;
+      
+      try {
+        // Try to get the ready service worker with timeout
+        const timeoutPromise = new Promise<null>((_, reject) => 
+          setTimeout(() => reject(new Error('timeout')), 10000)
+        );
+        
+        registration = await Promise.race([
+          navigator.serviceWorker.ready,
+          timeoutPromise
+        ]) as ServiceWorkerRegistration;
+      } catch {
+        // If timeout, try to register manually
+        console.log('Service worker not ready, attempting registration...');
+        registration = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
+        await navigator.serviceWorker.ready;
+        registration = await navigator.serviceWorker.getRegistration() as ServiceWorkerRegistration;
+      }
+      
+      if (!registration) {
+        throw new Error('Impossible d\'enregistrer le service worker');
+      }
       
       // Use provided VAPID key or fallback to config
       const publicKey = vapidPublicKey || VAPID_PUBLIC_KEY;
