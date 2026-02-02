@@ -5,8 +5,18 @@ import { Settings as SettingsIcon, Bell, Palette, Shield, HelpCircle } from 'luc
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { useSettings } from '@/hooks/useSettings';
 
 export default function Settings() {
+  const { 
+    darkMode, 
+    setDarkMode, 
+    notifyNewMsp, 
+    setNotifyNewMsp, 
+    notifyUpdates, 
+    setNotifyUpdates 
+  } = useSettings();
+
   return (
     <div className="min-h-screen bg-background">
       <DesktopSidebar />
@@ -37,11 +47,19 @@ export default function Settings() {
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="notif-new">Nouvelles fiches MSP</Label>
-                  <Switch id="notif-new" />
+                  <Switch 
+                    id="notif-new" 
+                    checked={notifyNewMsp}
+                    onCheckedChange={setNotifyNewMsp}
+                  />
                 </div>
                 <div className="flex items-center justify-between">
                   <Label htmlFor="notif-update">Mises à jour</Label>
-                  <Switch id="notif-update" />
+                  <Switch 
+                    id="notif-update" 
+                    checked={notifyUpdates}
+                    onCheckedChange={setNotifyUpdates}
+                  />
                 </div>
               </CardContent>
             </Card>
@@ -57,7 +75,11 @@ export default function Settings() {
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="dark-mode">Mode sombre</Label>
-                  <Switch id="dark-mode" />
+                  <Switch 
+                    id="dark-mode" 
+                    checked={darkMode}
+                    onCheckedChange={setDarkMode}
+                  />
                 </div>
               </CardContent>
             </Card>

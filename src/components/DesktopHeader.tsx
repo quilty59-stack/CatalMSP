@@ -1,8 +1,9 @@
 import { Link, useLocation } from 'react-router-dom';
-import { ChevronLeft, Search, Bell } from 'lucide-react';
+import { ChevronLeft, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { UserMenu } from '@/components/UserMenu';
+import { NotificationBell } from '@/components/NotificationBell';
 
 interface DesktopHeaderProps {
   title?: string;
@@ -59,10 +60,7 @@ export function DesktopHeader({
             />
           </div>
         )}
-        <Button variant="ghost" size="icon" className="relative">
-          <Bell className="w-5 h-5" />
-          <span className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full" />
-        </Button>
+        <NotificationBell />
         <UserMenu />
       </div>
     </header>

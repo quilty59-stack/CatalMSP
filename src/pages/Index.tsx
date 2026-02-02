@@ -11,9 +11,11 @@ import { BottomNav } from '@/components/BottomNav';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useSites } from '@/hooks/useSites';
 import { useAuth } from '@/hooks/useAuth';
+import { useSettings } from '@/hooks/useSettings';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from '@/components/ui/drawer';
 import { Switch } from '@/components/ui/switch';
 import { UserMenu } from '@/components/UserMenu';
+import { NotificationBell } from '@/components/NotificationBell';
 import logo from '@/assets/logo.png';
 
 const Index = () => {
@@ -24,6 +26,7 @@ const Index = () => {
   const isMobile = useIsMobile();
   const { sites } = useSites();
   const { isAdmin } = useAuth();
+  const { darkMode, setDarkMode } = useSettings();
 
   useEffect(() => {
     loadMspFromDatabase();
@@ -103,7 +106,10 @@ const Index = () => {
               <img src={logo} alt="CatalMSP" className="w-9 h-9" />
               <span className="font-display font-bold text-xl text-foreground">CatalMSP</span>
             </div>
-            <UserMenu />
+            <div className="flex items-center gap-1">
+              <NotificationBell variant="mobile" />
+              <UserMenu />
+            </div>
           </div>
         </header>
 
@@ -306,7 +312,10 @@ const Index = () => {
                   <Moon className="w-5 h-5 text-muted-foreground" />
                   <span className="font-medium">Mode sombre</span>
                 </div>
-                <Switch />
+                <Switch 
+                  checked={darkMode}
+                  onCheckedChange={setDarkMode}
+                />
               </div>
               <div className="flex items-center justify-between p-4 bg-muted rounded-xl">
                 <div className="flex items-center gap-3">
