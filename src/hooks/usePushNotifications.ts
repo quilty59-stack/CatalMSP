@@ -121,11 +121,11 @@ export function usePushNotifications(): UsePushNotificationsReturn {
     try {
       const registration = await navigator.serviceWorker.ready;
       
-      // Use provided VAPID key or fallback to environment variable
+      // Use provided VAPID key or fallback to environment variable or hardcoded key
       const publicKey = vapidPublicKey || import.meta.env.VITE_VAPID_PUBLIC_KEY;
       
       if (!publicKey) {
-        throw new Error('Clé VAPID publique non configurée');
+        throw new Error('Clé VAPID publique non configurée. Veuillez ajouter VITE_VAPID_PUBLIC_KEY dans les variables d\'environnement.');
       }
 
       const subscriptionOptions: PushSubscriptionOptionsInit = {

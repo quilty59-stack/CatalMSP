@@ -435,6 +435,14 @@ async function sendPushNotification(
   body: string,
   link?: string
 ): Promise<void> {
+  const vapidPublicKey = Deno.env.get("VAPID_PUBLIC_KEY");
+  const vapidPrivateKey = Deno.env.get("VAPID_PRIVATE_KEY");
+  
+  if (!vapidPublicKey || !vapidPrivateKey) {
+    console.log('VAPID keys not configured, skipping push notification');
+    return;
+  }
+  
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
   
   const { data: subscriptions, error } = await supabase
@@ -447,8 +455,91 @@ async function sendPushNotification(
     return;
   }
   
-  console.log('Would send push notification to', subscriptions.length, 'subscription(s) for user:', userId);
-  console.log('Push payload:', { title, body, link });
+  console.log(`Sending push notification to ${subscriptions.length} subscription(s) for user:`, userId);
+  
+  // Web Push payload
+  const payload = JSON.stringify({
+    title,
+    body,
+    icon: '/logo.png',
+    badge: '/logo.png',
+    data: { url: link || '/' },
+  });
+  
+  for (const sub of subscriptions) {
+    try {
+      // Build the JWT for VAPID authentication
+      const endpoint = new URL(sub.endpoint);
+      const audience = `${endpoint.protocol}//${endpoint.host}`;
+      
+      // Create VAPID JWT
+      const header = { typ: 'JWT', alg: 'ES256' };
+      const now = Math.floor(Date.now() / 1000);
+      const claims = {
+        aud: audience,
+        exp: now + 12 * 60 * 60, // 12 hours
+        sub: 'mailto:nepasrepondre@catalmsp.fr',
+      };
+      
+      // Base64url encode
+      const base64url = (data: any) => {
+        const json = typeof data === 'string' ? data : JSON.stringify(data);
+        const base64 = btoa(json);
+        return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+      };
+      
+      const unsignedToken = `${base64url(header)}.${base64url(claims)}`;
+      
+      // Import the private key and sign
+      const privateKeyBase64 = vapidPrivateKey.replace(/-/g, '+').replace(/_/g, '/');
+      const privateKeyBuffer = Uint8Array.from(atob(privateKeyBase64), c => c.charCodeAt(0));
+      
+      const cryptoKey = await crypto.subtle.importKey(
+        'raw',
+        privateKeyBuffer,
+        { name: 'ECDSA', namedCurve: 'P-256' },
+        false,
+        ['sign']
+      );
+      
+      const signatureBuffer = await crypto.subtle.sign(
+        { name: 'ECDSA', hash: 'SHA-256' },
+        cryptoKey,
+        new TextEncoder().encode(unsignedToken)
+      );
+      
+      // Convert signature from DER to raw format (if needed) and base64url encode
+      const signatureArray = new Uint8Array(signatureBuffer);
+      const signatureBase64 = btoa(String.fromCharCode(...signatureArray))
+        .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+      
+      const jwt = `${unsignedToken}.${signatureBase64}`;
+      
+      // Send the push notification
+      const response = await fetch(sub.endpoint, {
+        method: 'POST',
+        headers: {
+          'Authorization': `vapid t=${jwt}, k=${vapidPublicKey}`,
+          'Content-Type': 'application/octet-stream',
+          'Content-Encoding': 'aes128gcm',
+          'TTL': '86400',
+        },
+        body: payload,
+      });
+      
+      if (response.status === 201 || response.status === 200) {
+        console.log('Push notification sent successfully to:', sub.endpoint.substring(0, 50) + '...');
+      } else if (response.status === 410 || response.status === 404) {
+        // Subscription expired or invalid, remove it
+        console.log('Subscription expired, removing:', sub.id);
+        await supabase.from('push_subscriptions').delete().eq('id', sub.id);
+      } else {
+        console.error('Push notification failed:', response.status, await response.text());
+      }
+    } catch (pushError) {
+      console.error('Error sending push to subscription:', sub.id, pushError);
+    }
+  }
 }
 
 async function sendEmailNotification(
