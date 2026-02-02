@@ -17,7 +17,7 @@ interface NotificationRequest {
   title: string;
   message: string;
   link?: string;
-  targetUserId?: string; // If set, send to specific user; otherwise send to all admins
+  targetUserId?: string;
   metadata?: Record<string, any>;
   sendEmail?: boolean;
   emailSubject?: string;
@@ -26,6 +26,330 @@ interface NotificationRequest {
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const APP_URL = "https://msp-craft.lovable.app";
+const LOGO_URL = "https://msp-craft.lovable.app/logo.png";
+
+// ============================================
+// EMAIL TEMPLATES
+// ============================================
+
+function generateMspCreatedEmail(metadata: Record<string, any>): { subject: string; html: string } {
+  const { mspTitle, creatorName, mspSlug, siteName, commune } = metadata;
+  const viewLink = `${APP_URL}/msp/${mspSlug}`;
+  
+  return {
+    subject: "🔔 Nouvelle fiche MSP en attente de validation",
+    html: `
+      <!DOCTYPE html>
+      <html lang="fr">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Nouvelle MSP en attente</title>
+      </head>
+      <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8fafc;">
+        <table role="presentation" style="width: 100%; border-collapse: collapse;">
+          <tr>
+            <td align="center" style="padding: 40px 20px;">
+              <table role="presentation" style="max-width: 500px; width: 100%; background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); border-radius: 16px 16px 0 0; overflow: hidden;">
+                <tr>
+                  <td align="center" style="padding: 40px 30px;">
+                    <img src="${LOGO_URL}" alt="CatalMSP" style="width: 80px; height: 80px; border-radius: 16px; margin-bottom: 16px;" />
+                    <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 700;">
+                      🔔 Nouvelle MSP en attente
+                    </h1>
+                  </td>
+                </tr>
+              </table>
+              
+              <table role="presentation" style="max-width: 500px; width: 100%; background-color: #ffffff; border-radius: 0 0 16px 16px; box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);">
+                <tr>
+                  <td style="padding: 40px 30px;">
+                    <p style="color: #475569; font-size: 16px; line-height: 1.6; margin: 0 0 24px;">
+                      Une nouvelle fiche MSP a été soumise et attend votre validation.
+                    </p>
+                    
+                    <table style="width: 100%; background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%); border-radius: 12px; margin-bottom: 24px;">
+                      <tr>
+                        <td style="padding: 20px;">
+                          <p style="margin: 0 0 8px; font-size: 14px; color: #64748b;">Soumise par</p>
+                          <p style="margin: 0 0 16px; font-size: 18px; font-weight: 600; color: #1e293b;">${creatorName || 'Formateur'}</p>
+                          
+                          <p style="margin: 0 0 8px; font-size: 14px; color: #64748b;">Titre de la MSP</p>
+                          <p style="margin: 0 0 16px; font-size: 16px; font-weight: 500; color: #dc2626;">${mspTitle || 'Non spécifié'}</p>
+                          
+                          ${siteName ? `
+                          <p style="margin: 0 0 8px; font-size: 14px; color: #64748b;">Site</p>
+                          <p style="margin: 0; font-size: 16px; font-weight: 500; color: #1e293b;">${siteName}${commune ? ` - ${commune}` : ''}</p>
+                          ` : ''}
+                        </td>
+                      </tr>
+                    </table>
+                    
+                    <table role="presentation" style="width: 100%;">
+                      <tr>
+                        <td align="center">
+                          <a href="${viewLink}" style="display: inline-block; background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);">
+                            Voir la MSP →
+                          </a>
+                        </td>
+                      </tr>
+                    </table>
+                    
+                    <p style="color: #94a3b8; font-size: 13px; text-align: center; margin: 24px 0 0; line-height: 1.5;">
+                      Connectez-vous à CatalMSP pour valider ou refuser cette fiche.
+                    </p>
+                  </td>
+                </tr>
+              </table>
+              
+              <p style="color: #94a3b8; font-size: 12px; margin-top: 24px;">
+                © ${new Date().getFullYear()} CatalMSP - Tous droits réservés
+              </p>
+            </td>
+          </tr>
+        </table>
+      </body>
+      </html>
+    `
+  };
+}
+
+function generateMspValidatedEmail(metadata: Record<string, any>): { subject: string; html: string } {
+  const { mspTitle, mspSlug } = metadata;
+  const viewLink = `${APP_URL}/msp/${mspSlug}`;
+  
+  return {
+    subject: "✅ Votre fiche MSP a été validée !",
+    html: `
+      <!DOCTYPE html>
+      <html lang="fr">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>MSP Validée</title>
+      </head>
+      <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8fafc;">
+        <table role="presentation" style="width: 100%; border-collapse: collapse;">
+          <tr>
+            <td align="center" style="padding: 40px 20px;">
+              <table role="presentation" style="max-width: 500px; width: 100%; background: linear-gradient(135deg, #16a34a 0%, #15803d 100%); border-radius: 16px 16px 0 0; overflow: hidden;">
+                <tr>
+                  <td align="center" style="padding: 40px 30px;">
+                    <img src="${LOGO_URL}" alt="CatalMSP" style="width: 80px; height: 80px; border-radius: 16px; margin-bottom: 16px;" />
+                    <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 700;">
+                      ✅ MSP Validée !
+                    </h1>
+                  </td>
+                </tr>
+              </table>
+              
+              <table role="presentation" style="max-width: 500px; width: 100%; background-color: #ffffff; border-radius: 0 0 16px 16px; box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);">
+                <tr>
+                  <td style="padding: 40px 30px;">
+                    <p style="color: #475569; font-size: 16px; line-height: 1.6; margin: 0 0 24px;">
+                      Bonne nouvelle ! Votre fiche MSP a été validée par un administrateur.
+                    </p>
+                    
+                    <table style="width: 100%; background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border-radius: 12px; margin-bottom: 24px;">
+                      <tr>
+                        <td style="padding: 20px;">
+                          <p style="margin: 0 0 8px; font-size: 14px; color: #64748b;">Titre de la MSP</p>
+                          <p style="margin: 0 0 16px; font-size: 18px; font-weight: 600; color: #16a34a;">${mspTitle || 'Votre MSP'}</p>
+                          
+                          <p style="margin: 0; font-size: 14px; color: #475569; line-height: 1.5;">
+                            Elle est maintenant consultable par tous les formateurs de CatalMSP.
+                          </p>
+                        </td>
+                      </tr>
+                    </table>
+                    
+                    <table role="presentation" style="width: 100%;">
+                      <tr>
+                        <td align="center">
+                          <a href="${viewLink}" style="display: inline-block; background: linear-gradient(135deg, #16a34a 0%, #15803d 100%); color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 12px rgba(22, 163, 74, 0.3);">
+                            Consulter ma MSP →
+                          </a>
+                        </td>
+                      </tr>
+                    </table>
+                    
+                    <p style="color: #94a3b8; font-size: 13px; text-align: center; margin: 24px 0 0; line-height: 1.5;">
+                      Merci pour votre contribution à CatalMSP !
+                    </p>
+                  </td>
+                </tr>
+              </table>
+              
+              <p style="color: #94a3b8; font-size: 12px; margin-top: 24px;">
+                © ${new Date().getFullYear()} CatalMSP - Tous droits réservés
+              </p>
+            </td>
+          </tr>
+        </table>
+      </body>
+      </html>
+    `
+  };
+}
+
+function generateMspRejectedEmail(metadata: Record<string, any>): { subject: string; html: string } {
+  const { mspTitle, reason } = metadata;
+  
+  return {
+    subject: "❌ Votre fiche MSP n'a pas été validée",
+    html: `
+      <!DOCTYPE html>
+      <html lang="fr">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>MSP non validée</title>
+      </head>
+      <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8fafc;">
+        <table role="presentation" style="width: 100%; border-collapse: collapse;">
+          <tr>
+            <td align="center" style="padding: 40px 20px;">
+              <table role="presentation" style="max-width: 500px; width: 100%; background: linear-gradient(135deg, #ea580c 0%, #c2410c 100%); border-radius: 16px 16px 0 0; overflow: hidden;">
+                <tr>
+                  <td align="center" style="padding: 40px 30px;">
+                    <img src="${LOGO_URL}" alt="CatalMSP" style="width: 80px; height: 80px; border-radius: 16px; margin-bottom: 16px;" />
+                    <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 700;">
+                      MSP non validée
+                    </h1>
+                  </td>
+                </tr>
+              </table>
+              
+              <table role="presentation" style="max-width: 500px; width: 100%; background-color: #ffffff; border-radius: 0 0 16px 16px; box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);">
+                <tr>
+                  <td style="padding: 40px 30px;">
+                    <p style="color: #475569; font-size: 16px; line-height: 1.6; margin: 0 0 24px;">
+                      Nous sommes désolés, votre fiche MSP n'a pas été validée par l'administrateur.
+                    </p>
+                    
+                    <table style="width: 100%; background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%); border-radius: 12px; margin-bottom: 24px;">
+                      <tr>
+                        <td style="padding: 20px;">
+                          <p style="margin: 0 0 8px; font-size: 14px; color: #64748b;">Titre de la MSP</p>
+                          <p style="margin: 0 0 16px; font-size: 18px; font-weight: 600; color: #ea580c;">${mspTitle || 'Votre MSP'}</p>
+                          
+                          ${reason ? `
+                          <p style="margin: 0 0 8px; font-size: 14px; color: #64748b;">Raison</p>
+                          <p style="margin: 0; font-size: 14px; color: #475569; line-height: 1.5;">${reason}</p>
+                          ` : `
+                          <p style="margin: 0; font-size: 14px; color: #475569; line-height: 1.5;">
+                            Vous pouvez contacter l'administrateur pour plus d'informations.
+                          </p>
+                          `}
+                        </td>
+                      </tr>
+                    </table>
+                    
+                    <p style="color: #94a3b8; font-size: 13px; text-align: center; margin: 0; line-height: 1.5;">
+                      N'hésitez pas à soumettre une nouvelle fiche MSP si nécessaire.
+                    </p>
+                  </td>
+                </tr>
+              </table>
+              
+              <p style="color: #94a3b8; font-size: 12px; margin-top: 24px;">
+                © ${new Date().getFullYear()} CatalMSP - Tous droits réservés
+              </p>
+            </td>
+          </tr>
+        </table>
+      </body>
+      </html>
+    `
+  };
+}
+
+function generateSiteCreatedEmail(metadata: Record<string, any>): { subject: string; html: string } {
+  const { siteName, creatorName, commune, siteSlug } = metadata;
+  const viewLink = `${APP_URL}/sites/${siteSlug}`;
+  
+  return {
+    subject: "📍 Nouveau site conventionné ajouté",
+    html: `
+      <!DOCTYPE html>
+      <html lang="fr">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Nouveau site conventionné</title>
+      </head>
+      <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8fafc;">
+        <table role="presentation" style="width: 100%; border-collapse: collapse;">
+          <tr>
+            <td align="center" style="padding: 40px 20px;">
+              <table role="presentation" style="max-width: 500px; width: 100%; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); border-radius: 16px 16px 0 0; overflow: hidden;">
+                <tr>
+                  <td align="center" style="padding: 40px 30px;">
+                    <img src="${LOGO_URL}" alt="CatalMSP" style="width: 80px; height: 80px; border-radius: 16px; margin-bottom: 16px;" />
+                    <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 700;">
+                      📍 Nouveau site conventionné
+                    </h1>
+                  </td>
+                </tr>
+              </table>
+              
+              <table role="presentation" style="max-width: 500px; width: 100%; background-color: #ffffff; border-radius: 0 0 16px 16px; box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);">
+                <tr>
+                  <td style="padding: 40px 30px;">
+                    <p style="color: #475569; font-size: 16px; line-height: 1.6; margin: 0 0 24px;">
+                      Un nouveau site conventionné a été ajouté à CatalMSP.
+                    </p>
+                    
+                    <table style="width: 100%; background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border-radius: 12px; margin-bottom: 24px;">
+                      <tr>
+                        <td style="padding: 20px;">
+                          <p style="margin: 0 0 8px; font-size: 14px; color: #64748b;">Ajouté par</p>
+                          <p style="margin: 0 0 16px; font-size: 18px; font-weight: 600; color: #1e293b;">${creatorName || 'Formateur'}</p>
+                          
+                          <p style="margin: 0 0 8px; font-size: 14px; color: #64748b;">Nom du site</p>
+                          <p style="margin: 0 0 16px; font-size: 16px; font-weight: 500; color: #2563eb;">${siteName || 'Non spécifié'}</p>
+                          
+                          ${commune ? `
+                          <p style="margin: 0 0 8px; font-size: 14px; color: #64748b;">Commune</p>
+                          <p style="margin: 0; font-size: 16px; font-weight: 500; color: #1e293b;">${commune}</p>
+                          ` : ''}
+                        </td>
+                      </tr>
+                    </table>
+                    
+                    <table role="presentation" style="width: 100%;">
+                      <tr>
+                        <td align="center">
+                          <a href="${viewLink}" style="display: inline-block; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);">
+                            Voir le site →
+                          </a>
+                        </td>
+                      </tr>
+                    </table>
+                    
+                    <p style="color: #94a3b8; font-size: 13px; text-align: center; margin: 24px 0 0; line-height: 1.5;">
+                      Ce site est maintenant disponible pour créer des MSP.
+                    </p>
+                  </td>
+                </tr>
+              </table>
+              
+              <p style="color: #94a3b8; font-size: 12px; margin-top: 24px;">
+                © ${new Date().getFullYear()} CatalMSP - Tous droits réservés
+              </p>
+            </td>
+          </tr>
+        </table>
+      </body>
+      </html>
+    `
+  };
+}
+
+// ============================================
+// HELPER FUNCTIONS
+// ============================================
 
 async function getAdminUserIds(): Promise<string[]> {
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
@@ -41,6 +365,42 @@ async function getAdminUserIds(): Promise<string[]> {
   }
   
   return data.map((r: any) => r.user_id);
+}
+
+async function getAdminEmails(): Promise<string[]> {
+  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  
+  const adminUserIds = await getAdminUserIds();
+  if (adminUserIds.length === 0) return [];
+  
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('email')
+    .in('user_id', adminUserIds);
+  
+  if (error) {
+    console.error('Error fetching admin emails:', error);
+    return [];
+  }
+  
+  return data.map((p: any) => p.email).filter(Boolean);
+}
+
+async function getUserEmail(userId: string): Promise<string | null> {
+  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('email')
+    .eq('user_id', userId)
+    .single();
+  
+  if (error) {
+    console.error('Error fetching user email:', error);
+    return null;
+  }
+  
+  return data?.email || null;
 }
 
 async function createInAppNotification(
@@ -77,7 +437,6 @@ async function sendPushNotification(
 ): Promise<void> {
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
   
-  // Get user's push subscriptions
   const { data: subscriptions, error } = await supabase
     .from('push_subscriptions')
     .select('*')
@@ -88,21 +447,24 @@ async function sendPushNotification(
     return;
   }
   
-  // Note: In production, you would use web-push library to send actual push notifications
-  // For now, we log this - the actual push would require VAPID private key
   console.log('Would send push notification to', subscriptions.length, 'subscription(s) for user:', userId);
   console.log('Push payload:', { title, body, link });
 }
 
 async function sendEmailNotification(
-  email: string,
+  emails: string[],
   subject: string,
   html: string
 ): Promise<void> {
+  if (emails.length === 0) {
+    console.log('No emails to send to');
+    return;
+  }
+  
   try {
     const result = await resend.emails.send({
       from: "CatalMSP <nepasrepondre@catalmsp.fr>",
-      to: [email],
+      to: emails,
       subject,
       html,
     });
@@ -112,64 +474,9 @@ async function sendEmailNotification(
   }
 }
 
-function generateEmailTemplate(title: string, message: string, link?: string, buttonText?: string): string {
-  const logoUrl = "https://msp-craft.lovable.app/logo.png";
-  const buttonHtml = link && buttonText ? `
-    <table role="presentation" style="width: 100%; margin-top: 24px;">
-      <tr>
-        <td align="center">
-          <a href="${link}" style="display: inline-block; background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
-            ${buttonText} →
-          </a>
-        </td>
-      </tr>
-    </table>
-  ` : '';
-
-  return `
-    <!DOCTYPE html>
-    <html lang="fr">
-    <head>
-      <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>${title}</title>
-    </head>
-    <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8fafc;">
-      <table role="presentation" style="width: 100%; border-collapse: collapse;">
-        <tr>
-          <td align="center" style="padding: 40px 20px;">
-            <table role="presentation" style="max-width: 500px; width: 100%; background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); border-radius: 16px 16px 0 0; overflow: hidden;">
-              <tr>
-                <td align="center" style="padding: 40px 30px;">
-                  <img src="${logoUrl}" alt="CatalMSP" style="width: 80px; height: 80px; border-radius: 16px; margin-bottom: 16px;" />
-                  <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 700;">
-                    ${title}
-                  </h1>
-                </td>
-              </tr>
-            </table>
-            
-            <table role="presentation" style="max-width: 500px; width: 100%; background-color: #ffffff; border-radius: 0 0 16px 16px; box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);">
-              <tr>
-                <td style="padding: 40px 30px;">
-                  <p style="color: #475569; font-size: 16px; line-height: 1.6; margin: 0;">
-                    ${message}
-                  </p>
-                  ${buttonHtml}
-                </td>
-              </tr>
-            </table>
-            
-            <p style="color: #94a3b8; font-size: 12px; margin-top: 24px;">
-              © ${new Date().getFullYear()} CatalMSP - Tous droits réservés
-            </p>
-          </td>
-        </tr>
-      </table>
-    </body>
-    </html>
-  `;
-}
+// ============================================
+// MAIN HANDLER
+// ============================================
 
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
@@ -178,7 +485,7 @@ const handler = async (req: Request): Promise<Response> => {
 
   try {
     const body: NotificationRequest = await req.json();
-    const { type, title, message, link, targetUserId, metadata, sendEmail, emailSubject, emailHtml } = body;
+    const { type, title, message, link, targetUserId, metadata } = body;
 
     if (!type || !title || !message) {
       throw new Error("Missing required fields: type, title, message");
@@ -187,11 +494,10 @@ const handler = async (req: Request): Promise<Response> => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     let targetUserIds: string[] = [];
 
-    // Determine target users
+    // Determine target users for in-app notification
     if (targetUserId) {
       targetUserIds = [targetUserId];
     } else {
-      // Send to all admins
       targetUserIds = await getAdminUserIds();
     }
 
@@ -203,20 +509,51 @@ const handler = async (req: Request): Promise<Response> => {
       await sendPushNotification(userId, title, message, link);
     }
 
-    // Send email if requested
-    if (sendEmail && targetUserIds.length > 0) {
-      // Get email addresses for target users
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('email')
-        .in('user_id', targetUserIds);
-      
-      const html = emailHtml || generateEmailTemplate(title, message, link, 'Voir les détails');
-      
-      for (const profile of (profiles || [])) {
-        await sendEmailNotification(profile.email, emailSubject || title, html);
+    // ============================================
+    // AUTOMATIC EMAIL SENDING BASED ON TYPE
+    // ============================================
+    
+    if (type === 'msp_created') {
+      // Send email to admins
+      const adminEmails = await getAdminEmails();
+      const { subject, html } = generateMspCreatedEmail(metadata || {});
+      await sendEmailNotification(adminEmails, subject, html);
+      console.log('MSP created email sent to admins:', adminEmails);
+    }
+    
+    else if (type === 'msp_validated') {
+      // Send email to the creator (formateur)
+      if (targetUserId) {
+        const userEmail = await getUserEmail(targetUserId);
+        if (userEmail) {
+          const { subject, html } = generateMspValidatedEmail(metadata || {});
+          await sendEmailNotification([userEmail], subject, html);
+          console.log('MSP validated email sent to:', userEmail);
+        }
       }
     }
+    
+    else if (type === 'msp_rejected') {
+      // Send email to the creator (formateur)
+      if (targetUserId) {
+        const userEmail = await getUserEmail(targetUserId);
+        if (userEmail) {
+          const { subject, html } = generateMspRejectedEmail(metadata || {});
+          await sendEmailNotification([userEmail], subject, html);
+          console.log('MSP rejected email sent to:', userEmail);
+        }
+      }
+    }
+    
+    else if (type === 'site_created') {
+      // Send email to admins
+      const adminEmails = await getAdminEmails();
+      const { subject, html } = generateSiteCreatedEmail(metadata || {});
+      await sendEmailNotification(adminEmails, subject, html);
+      console.log('Site created email sent to admins:', adminEmails);
+    }
+    
+    // Note: 'user_signup' emails are handled by send-admin-notification function
 
     return new Response(
       JSON.stringify({ success: true, notifiedUsers: targetUserIds.length }),
