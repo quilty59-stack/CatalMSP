@@ -33,10 +33,13 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { sendNotification } from '@/hooks/useNotifications';
 import { MultiPhotoUpload, UploadedPhoto } from '@/components/MultiPhotoUpload';
 
 export default function CreateSite() {
   const navigate = useNavigate();
+  const { profile, user } = useAuth();
   const [isLocating, setIsLocating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [photos, setPhotos] = useState<UploadedPhoto[]>([]);
@@ -256,6 +259,7 @@ export default function CreateSite() {
           convention_expires_at: formData.conventionExpiresAt || null,
           photo_url: photoUrl,
           logo_url: logoUrl,
+          created_by: user?.id || null,
         }])
         .select()
         .single();
@@ -265,6 +269,27 @@ export default function CreateSite() {
         toast.error('Erreur lors de la sauvegarde');
         return;
       }
+
+      // Send notification to admin about new site
+      const formateurName = profile 
+        ? `${profile.first_name} ${profile.last_name}` 
+        : 'Un formateur';
+      
+      await sendNotification({
+        type: 'site_created',
+        title: 'Nouveau site conventionné',
+        message: `Nouveau site conventionné ajouté par ${formateurName} : "${formData.name}" à ${formData.commune}`,
+        link: `/sites/${data.slug}`,
+        sendEmail: true,
+        emailSubject: `📍 Nouveau site conventionné - ${formData.name}`,
+        metadata: {
+          siteId: data.id,
+          siteName: formData.name,
+          commune: formData.commune,
+          creatorName: formateurName,
+          creatorId: user?.id,
+        },
+      });
 
       toast.success('Site créé avec succès !');
       navigate(`/sites/${data.slug}`);

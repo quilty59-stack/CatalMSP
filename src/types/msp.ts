@@ -62,6 +62,9 @@ export interface MSP {
   publicUrl?: string;
   qrCodeImage?: string;
   
+  // Creator tracking
+  createdBy?: string;
+  
   // Timestamps
   createdAt: Date | string;
   updatedAt: Date | string;

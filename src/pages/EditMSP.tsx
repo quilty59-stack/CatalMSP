@@ -7,18 +7,21 @@ import { Switch } from '@/components/ui/switch';
 import { useState, useEffect } from 'react';
 import { useMsp } from '@/hooks/useMsp';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { sendNotification } from '@/hooks/useNotifications';
 import { toast } from 'sonner';
-import { Loader2, Save, ArrowLeft, MapPin, Target, BookOpen, Users, AlertTriangle, Wrench, Camera } from 'lucide-react';
+import { Loader2, Save, ArrowLeft, MapPin, Target, BookOpen, Users, AlertTriangle, Wrench, Camera, CheckCircle, Clock, AlertCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { SITE_TYPES, THEMES, STATUSES, SiteType, Theme, Status } from '@/types/msp';
 import { PhotoManager } from '@/components/PhotoManager';
-import { CheckCircle, Clock, AlertCircle } from 'lucide-react';
 
 export default function EditMSP() {
   const { slug } = useParams();
   const navigate = useNavigate();
+  const { isAdmin } = useAuth();
   const { msp, isLoading, error } = useMsp(slug);
   const [saving, setSaving] = useState(false);
+  const [originalStatus, setOriginalStatus] = useState<Status | null>(null);
   
   const [formData, setFormData] = useState({
     title: '',
@@ -53,6 +56,7 @@ export default function EditMSP() {
 
   useEffect(() => {
     if (msp) {
+      setOriginalStatus(msp.status || 'brouillon');
       setFormData({
         title: msp.title || '',
         siteName: msp.siteName || '',
@@ -126,6 +130,21 @@ export default function EditMSP() {
         .eq('slug', msp.slug);
 
       if (updateError) throw updateError;
+
+      // Check if status changed to validated - send notification to creator
+      if (isAdmin && originalStatus !== 'validee' && formData.status === 'validee' && msp.createdBy) {
+        await sendNotification({
+          type: 'msp_validated',
+          title: 'Votre MSP a été validée !',
+          message: `Votre MSP "${formData.title}" a été validée par un administrateur. Elle est maintenant consultable.`,
+          link: `/msp/${msp.slug}`,
+          targetUserId: msp.createdBy,
+          metadata: {
+            mspId: msp.id,
+            mspTitle: formData.title,
+          },
+        });
+      }
 
       toast.success('Fiche MSP mise à jour');
       navigate(`/msp/${msp.slug}`);

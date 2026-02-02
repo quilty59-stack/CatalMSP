@@ -30,6 +30,8 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { sendNotification } from '@/hooks/useNotifications';
 import { MultiPhotoUpload, UploadedPhoto } from '@/components/MultiPhotoUpload';
 import { SetupPhotosStep, SetupPhoto } from '@/components/SetupPhotosStep';
 
@@ -55,6 +57,7 @@ function getImageExtension(file: File) {
 
 export default function CreateMSP() {
   const navigate = useNavigate();
+  const { profile, user } = useAuth();
   const [currentStep, setCurrentStep] = useState(1);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isLocating, setIsLocating] = useState(false);
@@ -287,6 +290,7 @@ export default function CreateMSP() {
           safety_briefing: mspContent.safetyBriefing,
           equipment: mspContent.equipment || [],
           site_conventionne_id: formData.siteConventionneId || null,
+          created_by: user?.id || null,
         };
 
         const { data: mspRecord, error: insertError } = await supabase
@@ -344,6 +348,26 @@ export default function CreateMSP() {
             }
           }
         }
+
+        // Send notification to admin about new MSP
+        const formateurName = profile 
+          ? `${profile.first_name} ${profile.last_name}` 
+          : 'Un formateur';
+        
+        await sendNotification({
+          type: 'msp_created',
+          title: 'Nouvelle MSP en attente',
+          message: `Nouvelle MSP en attente de validation de ${formateurName} : "${mspContent.title || formData.siteName}"`,
+          link: `/msp/${mspRecord.slug}`,
+          sendEmail: true,
+          emailSubject: `🔔 Nouvelle MSP à valider - ${mspContent.title || formData.siteName}`,
+          metadata: {
+            mspId: mspRecord.id,
+            mspTitle: mspContent.title || formData.siteName,
+            creatorName: formateurName,
+            creatorId: user?.id,
+          },
+        });
 
         toast.success('Fiche MSP créée avec succès !');
         navigate(`/msp/${mspRecord.slug}`);

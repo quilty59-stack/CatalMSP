@@ -70,7 +70,7 @@ export default function Signup() {
       return;
     }
 
-    // Send welcome email and admin notification immediately after successful signup
+    // Send welcome email, admin notification, and in-app notification
     const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
     const headers = {
@@ -79,18 +79,36 @@ export default function Signup() {
       'Authorization': `Bearer ${anonKey}`,
     };
 
-    // Use Promise.allSettled to send both emails
+    // Use Promise.allSettled to send all notifications
     try {
-      const [welcomeResult, adminResult] = await Promise.allSettled([
+      const [welcomeResult, adminResult, notificationResult] = await Promise.allSettled([
+        // Welcome email
         fetch(`${supabaseUrl}/functions/v1/send-welcome-email`, {
           method: 'POST',
           headers,
           body: JSON.stringify(emailData),
         }),
+        // Admin email notification (existing)
         fetch(`${supabaseUrl}/functions/v1/send-admin-notification`, {
           method: 'POST',
           headers,
           body: JSON.stringify(adminData),
+        }),
+        // Admin in-app + push notification (new)
+        fetch(`${supabaseUrl}/functions/v1/send-notification`, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            type: 'user_signup',
+            title: 'Nouvelle inscription',
+            message: `Nouvelle inscription : ${firstName} ${lastName} (${email})`,
+            link: '/admin',
+            metadata: {
+              userEmail: email,
+              firstName,
+              lastName,
+            },
+          }),
         }),
       ]);
 
@@ -106,8 +124,14 @@ export default function Signup() {
       } else {
         console.error('Admin notification failed:', adminResult.reason);
       }
+
+      if (notificationResult.status === 'fulfilled') {
+        console.log('In-app notification status:', notificationResult.value.status);
+      } else {
+        console.error('In-app notification failed:', notificationResult.reason);
+      }
     } catch (emailError) {
-      console.error('Failed to send emails:', emailError);
+      console.error('Failed to send notifications:', emailError);
     }
 
     setIsLoading(false);

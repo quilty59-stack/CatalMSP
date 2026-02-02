@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Bell } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Bell, FileText, MapPin, UserPlus, CheckCircle, XCircle, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Popover,
@@ -8,58 +8,49 @@ import {
 } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useSettings } from '@/hooks/useSettings';
+import { useNotifications, Notification } from '@/hooks/useNotifications';
+import { formatDistanceToNow } from 'date-fns';
+import { fr } from 'date-fns/locale';
 
-interface Notification {
-  id: string;
-  title: string;
-  message: string;
-  date: Date;
-  read: boolean;
-}
-
-// Mock notifications - in a real app these would come from the backend
-const mockNotifications: Notification[] = [
-  {
-    id: '1',
-    title: 'Bienvenue sur CatalMSP',
-    message: 'Découvrez les fonctionnalités de l\'application',
-    date: new Date(),
-    read: false,
-  },
-];
+const typeIcons: Record<string, React.ReactNode> = {
+  msp_created: <FileText className="w-4 h-4 text-primary" />,
+  msp_validated: <CheckCircle className="w-4 h-4 text-success" />,
+  msp_rejected: <XCircle className="w-4 h-4 text-destructive" />,
+  site_created: <MapPin className="w-4 h-4 text-info" />,
+  user_signup: <UserPlus className="w-4 h-4 text-warning" />,
+};
 
 export function NotificationBell({ variant = 'default' }: { variant?: 'default' | 'mobile' }) {
-  const [notifications, setNotifications] = useState<Notification[]>(mockNotifications);
-  const [open, setOpen] = useState(false);
+  const navigate = useNavigate();
   const { notificationsEnabled } = useSettings();
-
-  const unreadCount = notifications.filter(n => !n.read).length;
-
-  const markAllAsRead = () => {
-    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-  };
-
-  const markAsRead = (id: string) => {
-    setNotifications(prev => prev.map(n => 
-      n.id === id ? { ...n, read: true } : n
-    ));
-  };
+  const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
 
   if (!notificationsEnabled) {
     return null;
   }
+
+  const recentNotifications = notifications.slice(0, 5);
+
+  const handleNotificationClick = (notification: Notification) => {
+    markAsRead(notification.id);
+    if (notification.link) {
+      navigate(notification.link);
+    }
+  };
 
   const buttonClasses = variant === 'mobile' 
     ? 'relative h-9 w-9'
     : 'relative';
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover>
       <PopoverTrigger asChild>
         <Button variant="ghost" size="icon" className={buttonClasses}>
           <Bell className={variant === 'mobile' ? 'w-4 h-4' : 'w-5 h-5'} />
           {unreadCount > 0 && (
-            <span className={`absolute ${variant === 'mobile' ? 'top-0 right-0 w-2 h-2' : 'top-1 right-1 w-2 h-2'} bg-primary rounded-full`} />
+            <span className={`absolute ${variant === 'mobile' ? 'top-0 right-0' : 'top-1 right-1'} flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground`}>
+              {unreadCount > 9 ? '9+' : unreadCount}
+            </span>
           )}
         </Button>
       </PopoverTrigger>
@@ -85,27 +76,34 @@ export function NotificationBell({ variant = 'default' }: { variant?: 'default' 
             </div>
           ) : (
             <div className="divide-y divide-border">
-              {notifications.map(notification => (
+              {recentNotifications.map((notification) => (
                 <button
                   key={notification.id}
-                  onClick={() => markAsRead(notification.id)}
+                  onClick={() => handleNotificationClick(notification)}
                   className={`w-full text-left p-4 hover:bg-muted/50 transition-colors ${
                     !notification.read ? 'bg-primary/5' : ''
                   }`}
                 >
                   <div className="flex items-start gap-3">
-                    {!notification.read && (
-                      <span className="w-2 h-2 mt-2 bg-primary rounded-full shrink-0" />
-                    )}
-                    <div className={!notification.read ? '' : 'ml-5'}>
-                      <p className="font-medium text-sm text-foreground">{notification.title}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">{notification.message}</p>
+                    <div className="shrink-0 w-8 h-8 rounded-full bg-muted flex items-center justify-center">
+                      {typeIcons[notification.type] || <Bell className="w-4 h-4" />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium text-sm text-foreground truncate">
+                          {notification.title}
+                        </p>
+                        {!notification.read && (
+                          <span className="w-2 h-2 bg-primary rounded-full shrink-0" />
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
+                        {notification.message}
+                      </p>
                       <p className="text-xs text-muted-foreground/70 mt-1">
-                        {notification.date.toLocaleDateString('fr-FR', { 
-                          day: 'numeric', 
-                          month: 'short',
-                          hour: '2-digit',
-                          minute: '2-digit'
+                        {formatDistanceToNow(new Date(notification.created_at), { 
+                          addSuffix: true, 
+                          locale: fr 
                         })}
                       </p>
                     </div>
@@ -115,6 +113,18 @@ export function NotificationBell({ variant = 'default' }: { variant?: 'default' 
             </div>
           )}
         </ScrollArea>
+        {notifications.length > 0 && (
+          <div className="p-3 border-t border-border">
+            <Button 
+              variant="outline" 
+              className="w-full gap-2"
+              onClick={() => navigate('/notifications')}
+            >
+              <ExternalLink className="w-4 h-4" />
+              Voir toutes les notifications
+            </Button>
+          </div>
+        )}
       </PopoverContent>
     </Popover>
   );

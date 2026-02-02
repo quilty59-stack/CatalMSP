@@ -23,6 +23,7 @@ export type Database = {
           competences: string | null
           constraints: string | null
           created_at: string
+          created_by: string | null
           difficulty: number
           difficulty_complex: string | null
           difficulty_facilitator: string | null
@@ -59,6 +60,7 @@ export type Database = {
           competences?: string | null
           constraints?: string | null
           created_at?: string
+          created_by?: string | null
           difficulty?: number
           difficulty_complex?: string | null
           difficulty_facilitator?: string | null
@@ -95,6 +97,7 @@ export type Database = {
           competences?: string | null
           constraints?: string | null
           created_at?: string
+          created_by?: string | null
           difficulty?: number
           difficulty_complex?: string | null
           difficulty_facilitator?: string | null
@@ -168,6 +171,42 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          created_at: string
+          id: string
+          link: string | null
+          message: string
+          metadata: Json | null
+          read: boolean
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          link?: string | null
+          message: string
+          metadata?: Json | null
+          read?: boolean
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          link?: string | null
+          message?: string
+          metadata?: Json | null
+          read?: boolean
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -201,6 +240,36 @@ export type Database = {
         }
         Relationships: []
       }
+      push_subscriptions: {
+        Row: {
+          auth: string
+          created_at: string
+          endpoint: string
+          id: string
+          p256dh: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          auth: string
+          created_at?: string
+          endpoint: string
+          id?: string
+          p256dh: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          auth?: string
+          created_at?: string
+          endpoint?: string
+          id?: string
+          p256dh?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       sites_conventionnes: {
         Row: {
           access_keys: string | null
@@ -215,6 +284,7 @@ export type Database = {
           convention_notes: string | null
           convention_signed_at: string | null
           created_at: string
+          created_by: string | null
           id: string
           latitude: number | null
           logo_url: string | null
@@ -243,6 +313,7 @@ export type Database = {
           convention_notes?: string | null
           convention_signed_at?: string | null
           created_at?: string
+          created_by?: string | null
           id?: string
           latitude?: number | null
           logo_url?: string | null
@@ -271,6 +342,7 @@ export type Database = {
           convention_notes?: string | null
           convention_signed_at?: string | null
           created_at?: string
+          created_by?: string | null
           id?: string
           latitude?: number | null
           logo_url?: string | null
