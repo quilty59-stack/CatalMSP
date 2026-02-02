@@ -1,12 +1,13 @@
 import { Header } from '@/components/Header';
 import { BottomNav } from '@/components/BottomNav';
 import { DesktopSidebar } from '@/components/DesktopSidebar';
+import { PushNotificationSettings } from '@/components/PushNotificationSettings';
 import { Settings as SettingsIcon, Bell, Palette, Shield, HelpCircle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
 import { useSettings } from '@/hooks/useSettings';
-
 export default function Settings() {
   const { 
     darkMode, 
@@ -46,7 +47,7 @@ export default function Settings() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="notif-new">Nouvelles fiches MSP</Label>
+                  <Label htmlFor="notif-new">Nouvelles fiches MSP (in-app)</Label>
                   <Switch 
                     id="notif-new" 
                     checked={notifyNewMsp}
@@ -54,13 +55,17 @@ export default function Settings() {
                   />
                 </div>
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="notif-update">Mises à jour</Label>
+                  <Label htmlFor="notif-update">Mises à jour (in-app)</Label>
                   <Switch 
                     id="notif-update" 
                     checked={notifyUpdates}
                     onCheckedChange={setNotifyUpdates}
                   />
                 </div>
+                
+                <Separator className="my-4" />
+                
+                <PushNotificationSettings />
               </CardContent>
             </Card>
 
