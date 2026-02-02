@@ -25,6 +25,15 @@ export function PushNotificationSettings() {
   const [isEnabled, setIsEnabled] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
+  const isInIframe = typeof window !== 'undefined' && window.self !== window.top;
+  const openInNewTab = () => {
+    try {
+      window.open(window.location.href, '_blank', 'noopener,noreferrer');
+    } catch {
+      // noop
+    }
+  };
+
   // Check if user has an existing subscription in the database
   useEffect(() => {
     const checkExistingSubscription = async () => {
@@ -48,6 +57,13 @@ export function PushNotificationSettings() {
       return;
     }
 
+     // In Lovable editor preview, notification permissions can be blocked or granted for a different origin.
+     // Ask user to open the app in a dedicated tab.
+     if (enabled && isInIframe) {
+       toast.error("Ouvrez l'app dans un nouvel onglet pour activer les notifications (l'aperçu intégré peut bloquer la demande).");
+       return;
+     }
+
     setIsSaving(true);
 
     try {
@@ -56,7 +72,11 @@ export function PushNotificationSettings() {
         const perm = await requestPermission();
         
         if (perm !== 'granted') {
-          toast.error('Vous devez autoriser les notifications dans votre navigateur');
+          toast.error(
+            isInIframe
+              ? "Ouvrez l'app dans un nouvel onglet puis autorisez les notifications pour ce site."
+              : 'Vous devez autoriser les notifications dans votre navigateur'
+          );
           setIsSaving(false);
           return;
         }
@@ -131,6 +151,23 @@ export function PushNotificationSettings() {
 
   return (
     <div className="space-y-4">
+      {isInIframe && (
+        <div className="flex items-start justify-between gap-3 p-3 bg-muted/50 rounded-lg">
+          <div className="flex items-start gap-2">
+            <AlertCircle className="w-4 h-4 text-muted-foreground mt-0.5" />
+            <div>
+              <p className="text-sm font-medium">Activation depuis l'aperçu</p>
+              <p className="text-xs text-muted-foreground">
+                Pour activer les notifications, ouvrez l'application dans un nouvel onglet (les permissions ne sont pas les mêmes dans l'éditeur).
+              </p>
+            </div>
+          </div>
+          <Button variant="outline" size="sm" onClick={openInNewTab}>
+            Ouvrir
+          </Button>
+        </div>
+      )}
+
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           {isEnabled ? (
@@ -159,7 +196,9 @@ export function PushNotificationSettings() {
         <div className="flex items-center gap-2 p-3 bg-destructive/10 rounded-lg text-sm">
           <AlertCircle className="w-4 h-4 text-destructive" />
           <span className="text-destructive">
-            Notifications bloquées. Modifiez les paramètres de votre navigateur.
+            {isInIframe
+              ? "Notifications bloquées dans l'aperçu intégré. Ouvrez l'app dans un nouvel onglet puis autorisez les notifications pour ce site."
+              : 'Notifications bloquées. Modifiez les paramètres de votre navigateur.'}
           </span>
         </div>
       )}
