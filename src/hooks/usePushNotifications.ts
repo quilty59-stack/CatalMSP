@@ -19,7 +19,7 @@ export interface UsePushNotificationsReturn extends PushNotificationState {
 /**
  * Converts a base64 URL-safe string to a Uint8Array for VAPID keys
  */
-function urlBase64ToUint8Array(base64String: string): ArrayBuffer {
+function urlBase64ToUint8Array(base64String: string): Uint8Array<ArrayBuffer> {
   const padding = '='.repeat((4 - base64String.length % 4) % 4);
   const base64 = (base64String + padding)
     .replace(/-/g, '+')
@@ -29,7 +29,7 @@ function urlBase64ToUint8Array(base64String: string): ArrayBuffer {
   for (let i = 0; i < rawData.length; ++i) {
     outputArray[i] = rawData.charCodeAt(i);
   }
-  return outputArray.buffer;
+  return outputArray as Uint8Array<ArrayBuffer>;
 }
 
 export function usePushNotifications(): UsePushNotificationsReturn {
