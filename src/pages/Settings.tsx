@@ -1,8 +1,9 @@
+import { Link } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { BottomNav } from '@/components/BottomNav';
 import { DesktopSidebar } from '@/components/DesktopSidebar';
 import { PushNotificationSettings } from '@/components/PushNotificationSettings';
-import { Settings as SettingsIcon, Bell, Palette, Shield, HelpCircle } from 'lucide-react';
+import { Settings as SettingsIcon, Bell, Palette, Shield, HelpCircle, ChevronRight } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
@@ -89,20 +90,20 @@ export default function Settings() {
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Shield className="w-5 h-5" />
-                  Confidentialité
-                </CardTitle>
-                <CardDescription>Paramètres de confidentialité</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  Vos données sont stockées localement et ne sont pas partagées.
-                </p>
-              </CardContent>
-            </Card>
+            <Link to="/confidentialite">
+              <Card className="hover:bg-muted/50 transition-colors cursor-pointer">
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    <span className="flex items-center gap-2">
+                      <Shield className="w-5 h-5" />
+                      Confidentialité
+                    </span>
+                    <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                  </CardTitle>
+                  <CardDescription>Politique de confidentialité et vos droits</CardDescription>
+                </CardHeader>
+              </Card>
+            </Link>
 
             <Card>
               <CardHeader>
