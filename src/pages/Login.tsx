@@ -103,6 +103,9 @@ export default function Login() {
                 S'inscrire
               </Link>
             </p>
+            <Link to="/confidentialite" className="text-xs text-muted-foreground hover:underline">
+              Politique de confidentialité
+            </Link>
           </CardFooter>
         </form>
       </Card>

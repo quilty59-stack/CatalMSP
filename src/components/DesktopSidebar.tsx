@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Home, FolderOpen, Plus, QrCode, Building2, Settings, HelpCircle, Map, Shield } from 'lucide-react';
+import { Home, FolderOpen, Plus, QrCode, Building2, Settings, HelpCircle, Map, Shield, FileText } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { useAuth } from '@/hooks/useAuth';
@@ -15,6 +15,7 @@ const navItems = [
 
 const secondaryItems = [
   { icon: Settings, label: 'Paramètres', path: '/settings' },
+  { icon: FileText, label: 'Confidentialité', path: '/confidentialite' },
   { icon: HelpCircle, label: 'Aide', path: '/aide' },
 ];
 
