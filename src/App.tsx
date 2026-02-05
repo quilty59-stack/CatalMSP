@@ -27,6 +27,7 @@ import Signup from "./pages/Signup";
 import Admin from "./pages/Admin";
 import ResetPassword from "./pages/ResetPassword";
 import Notifications from "./pages/Notifications";
+import Privacy from "./pages/Privacy";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -89,6 +90,7 @@ const App = () => {
                   <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
                   <Route path="/aide" element={<ProtectedRoute><Aide /></ProtectedRoute>} />
                   <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
+                  <Route path="/confidentialite" element={<ProtectedRoute><Privacy /></ProtectedRoute>} />
                   
                   {/* Route admin */}
                   <Route path="/admin" element={<ProtectedRoute requireAdmin><Admin /></ProtectedRoute>} />
