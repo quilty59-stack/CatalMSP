@@ -74,6 +74,7 @@ const App = () => {
                   <Route path="/inscription" element={<Signup />} />
                   <Route path="/reset-password" element={<ResetPassword />} />
                   <Route path="/public/:slug" element={<PublicMSP />} />
+                  <Route path="/confidentialite" element={<Privacy />} />
                   
                   {/* Routes protégées */}
                   <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
@@ -90,7 +91,6 @@ const App = () => {
                   <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
                   <Route path="/aide" element={<ProtectedRoute><Aide /></ProtectedRoute>} />
                   <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
-                  <Route path="/confidentialite" element={<ProtectedRoute><Privacy /></ProtectedRoute>} />
                   
                   {/* Route admin */}
                   <Route path="/admin" element={<ProtectedRoute requireAdmin><Admin /></ProtectedRoute>} />
