@@ -12,7 +12,7 @@ import {
   THEMES,
 } from '@/types/msp';
 import { SiteConventionne } from '@/types/site';
-import { useSitesByCommune } from '@/hooks/useSites';
+import { useSitesByProximity } from '@/hooks/useSites';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Camera,
@@ -77,14 +77,14 @@ export default function CreateMSP() {
     siteConventionneId: '' as string,
   });
 
-  // Fetch sites matching the commune
-  const { sites: matchingSites, isLoading: isLoadingSites } = useSitesByCommune(formData.commune);
+  // Fetch sites by proximity (address + commune)
+  const { sites: matchingSites, isLoading: isLoadingSites } = useSitesByProximity(formData.address, formData.commune);
 
   const updateField = (field: string, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     
-    // Show suggestions when commune changes and has content
-    if (field === 'commune' && value.length >= 2) {
+    // Show suggestions when commune or address changes
+    if ((field === 'commune' || field === 'address') && value.length >= 2) {
       setShowSiteSuggestions(true);
     } else if (field === 'commune' && value.length < 2) {
       setShowSiteSuggestions(false);
@@ -492,7 +492,7 @@ export default function CreateMSP() {
                   <div className="p-2 border-b border-border bg-muted/50">
                     <p className="text-xs font-medium text-muted-foreground flex items-center gap-1">
                       <MapPinned className="w-3 h-3" />
-                      Sites conventionnés disponibles
+                      Sites conventionnés les plus proches
                     </p>
                   </div>
                   {matchingSites.map((site) => (
