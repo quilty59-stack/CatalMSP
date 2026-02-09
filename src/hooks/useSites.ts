@@ -82,36 +82,92 @@ export function useSite(slug: string | undefined) {
   return { site, isLoading, error, refetch: loadSite };
 }
 
-export function useSitesByCommune(commune: string) {
+// Haversine distance in km between two GPS points
+function haversineDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+export function useSitesByProximity(address: string, commune: string) {
   const [sites, setSites] = useState<SiteConventionne[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
+  const searchQuery = address || commune;
+
   useEffect(() => {
-    if (!commune || commune.length < 2) {
+    if (!searchQuery || searchQuery.length < 2) {
       setSites([]);
       return;
     }
 
-    loadSitesByCommune();
-  }, [commune]);
+    const timer = setTimeout(() => {
+      loadSitesByProximity();
+    }, 400);
 
-  const loadSitesByCommune = async () => {
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  const loadSitesByProximity = async () => {
     setIsLoading(true);
     try {
+      // Load all sites (small dataset)
       const { data, error } = await supabase
         .from('sites_conventionnes')
-        .select('*')
-        .ilike('commune', `%${commune}%`)
-        .limit(5);
+        .select('*');
 
-      if (error) {
-        console.error('Error loading sites by commune:', error);
+      if (error || !data) {
+        console.error('Error loading sites:', error);
+        setIsLoading(false);
         return;
       }
 
-      if (data) {
-        setSites(data.map(transformDbToSite));
+      const allSites = data.map(transformDbToSite);
+
+      // Try to geocode the search query for proximity sorting
+      let userLat: number | null = null;
+      let userLon: number | null = null;
+
+      try {
+        const geoQuery = address ? `${address}, ${commune}` : commune;
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(geoQuery)}&limit=1&countrycodes=fr`,
+          { headers: { 'Accept': 'application/json' } }
+        );
+        const geoData = await response.json();
+        if (geoData?.length > 0) {
+          userLat = parseFloat(geoData[0].lat);
+          userLon = parseFloat(geoData[0].lon);
+        }
+      } catch {
+        // Geocoding failed, fall back to text matching
       }
+
+      let sorted: SiteConventionne[];
+
+      if (userLat !== null && userLon !== null) {
+        // Sort by GPS distance
+        sorted = allSites
+          .filter(s => s.latitude && s.longitude)
+          .map(s => ({
+            site: s,
+            distance: haversineDistance(userLat!, userLon!, s.latitude!, s.longitude!)
+          }))
+          .sort((a, b) => a.distance - b.distance)
+          .slice(0, 5)
+          .map(s => s.site);
+      } else {
+        // Fallback: text matching on commune
+        sorted = allSites
+          .filter(s => s.commune.toLowerCase().includes(commune.toLowerCase()))
+          .slice(0, 5);
+      }
+
+      setSites(sorted);
     } catch (err) {
       console.error('Unexpected error:', err);
     } finally {
@@ -120,4 +176,9 @@ export function useSitesByCommune(commune: string) {
   };
 
   return { sites, isLoading };
+}
+
+// Keep backward compatibility
+export function useSitesByCommune(commune: string) {
+  return useSitesByProximity('', commune);
 }
