@@ -68,7 +68,7 @@ export function usePushNotifications(): UsePushNotificationsReturn {
         ]) as ServiceWorkerRegistration;
         
         if (registration) {
-          const existingSubscription = await registration.pushManager.getSubscription();
+          const existingSubscription = await (registration as any).pushManager.getSubscription();
           if (existingSubscription) {
             setSubscription(existingSubscription);
           }
@@ -168,7 +168,7 @@ export function usePushNotifications(): UsePushNotificationsReturn {
         applicationServerKey: urlBase64ToUint8Array(publicKey),
       };
 
-      const pushSubscription = await registration.pushManager.subscribe(subscriptionOptions);
+      const pushSubscription = await (registration as any).pushManager.subscribe(subscriptionOptions);
       setSubscription(pushSubscription);
       
       console.log('Push subscription created:', JSON.stringify(pushSubscription));
