@@ -6,7 +6,7 @@
  */
 
 // VAPID Public Key for CatalMSP push notifications
-export const VAPID_PUBLIC_KEY = 'BNZncPQeyH0i2SpL7cypZX908a1-W4442-qs3n-VX3NGgIevGw-qllfbm7yBRZjXdc839WZq0Dutvsb-nTpTMNg';
+export const VAPID_PUBLIC_KEY = 'BGZNbw2ObkDbeJJK2V22zkvPVr1HMTAKNkkx6339zWHePKwm-YuYOO3xC-fUQC_q-uxuqestVWnA7BEIJ4HjlW4';
 
 // Helper to check if VAPID is configured
 export const isVapidConfigured = (): boolean => {
