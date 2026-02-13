@@ -478,7 +478,7 @@ async function sendPushNotification(
       const claims = {
         aud: audience,
         exp: now + 12 * 60 * 60, // 12 hours
-        sub: 'mailto:nepasrepondre@catalmsp.fr',
+        sub: 'mailto:quilty59@gmail.com',
       };
       
       // Base64url encode
