@@ -130,49 +130,77 @@ export function usePushNotifications(): UsePushNotificationsReturn {
     setIsLoading(true);
     setError(null);
 
-    try {
-      // Ensure service worker is registered
-      let registration: ServiceWorkerRegistration;
-      
+    const doSubscribe = async (registration: ServiceWorkerRegistration, retry = false): Promise<PushSubscription> => {
+      const publicKey = vapidPublicKey || VAPID_PUBLIC_KEY;
+      if (!publicKey || !isVapidConfigured()) {
+        throw new Error('Clé VAPID publique non configurée. Contactez l\'administrateur.');
+      }
+
+      // 1. Check for existing subscription and remove it
       try {
-        // Try to get the ready service worker with timeout
-        const timeoutPromise = new Promise<null>((_, reject) => 
+        const existing = await (registration as any).pushManager.getSubscription();
+        if (existing) {
+          console.log('Existing push subscription found, unsubscribing…');
+          await existing.unsubscribe();
+
+          // Remove from Supabase too
+          const { supabase } = await import('@/integrations/supabase/client');
+          await supabase
+            .from('push_subscriptions')
+            .delete()
+            .eq('endpoint', existing.endpoint);
+        }
+      } catch (cleanupErr) {
+        console.warn('Cleanup of old subscription failed, continuing…', cleanupErr);
+      }
+
+      // 2. Create new subscription
+      try {
+        const pushSubscription = await (registration as any).pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(publicKey),
+        });
+        return pushSubscription;
+      } catch (subErr: any) {
+        // 3. If applicationServerKey mismatch, force unsubscribe and retry once
+        if (!retry && subErr?.message?.includes('applicationServerKey')) {
+          console.warn('applicationServerKey mismatch, forcing unsubscribe and retrying…');
+          try {
+            const old = await (registration as any).pushManager.getSubscription();
+            if (old) await old.unsubscribe();
+          } catch { /* ignore */ }
+
+          return doSubscribe(registration, true);
+        }
+        throw subErr;
+      }
+    };
+
+    try {
+      let registration: ServiceWorkerRegistration;
+
+      try {
+        const timeoutPromise = new Promise<null>((_, reject) =>
           setTimeout(() => reject(new Error('timeout')), 10000)
         );
-        
         registration = await Promise.race([
           navigator.serviceWorker.ready,
           timeoutPromise
         ]) as ServiceWorkerRegistration;
       } catch {
-        // If timeout, try to register manually
         console.log('Service worker not ready, attempting registration...');
         registration = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
         await navigator.serviceWorker.ready;
         registration = await navigator.serviceWorker.getRegistration() as ServiceWorkerRegistration;
       }
-      
+
       if (!registration) {
         throw new Error('Impossible d\'enregistrer le service worker');
       }
-      
-      // Use provided VAPID key or fallback to config
-      const publicKey = vapidPublicKey || VAPID_PUBLIC_KEY;
-      
-      if (!publicKey || !isVapidConfigured()) {
-        throw new Error('Clé VAPID publique non configurée. Contactez l\'administrateur.');
-      }
 
-      const subscriptionOptions: PushSubscriptionOptionsInit = {
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(publicKey),
-      };
-
-      const pushSubscription = await (registration as any).pushManager.subscribe(subscriptionOptions);
+      const pushSubscription = await doSubscribe(registration);
       setSubscription(pushSubscription);
-      
       console.log('Push subscription created:', JSON.stringify(pushSubscription));
-      
       return pushSubscription;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erreur lors de l\'abonnement aux notifications';
