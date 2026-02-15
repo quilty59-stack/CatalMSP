@@ -457,7 +457,6 @@ async function sendPushNotification(
   
   console.log(`Sending push notification to ${subscriptions.length} subscription(s) for user:`, userId);
   
-  // Web Push payload
   const payload = JSON.stringify({
     title,
     body,
@@ -465,57 +464,130 @@ async function sendPushNotification(
     badge: '/logo.png',
     data: { url: link || '/' },
   });
-  
+
+  // Helper: base64url encode/decode
+  const b64url = (buf: ArrayBuffer | Uint8Array) => {
+    const bytes = buf instanceof Uint8Array ? buf : new Uint8Array(buf);
+    return btoa(String.fromCharCode(...bytes))
+      .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  };
+  const b64urlJson = (obj: unknown) => {
+    return btoa(JSON.stringify(obj)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  };
+  const b64urlDecode = (s: string) => {
+    const padded = s.replace(/-/g, '+').replace(/_/g, '/') + '='.repeat((4 - s.length % 4) % 4);
+    return Uint8Array.from(atob(padded), c => c.charCodeAt(0));
+  };
+
+  // Import VAPID private key as JWK for ECDSA signing
+  const vapidPrivateKeyBytes = b64urlDecode(vapidPrivateKey);
+  const vapidPublicKeyBytes = b64urlDecode(vapidPublicKey);
+
+  // Decode uncompressed public key (65 bytes: 0x04 || x(32) || y(32))
+  const vapidPubX = b64url(vapidPublicKeyBytes.slice(1, 33));
+  const vapidPubY = b64url(vapidPublicKeyBytes.slice(33, 65));
+  const vapidPrivD = b64url(vapidPrivateKeyBytes);
+
+  const vapidSigningKey = await crypto.subtle.importKey(
+    'jwk',
+    { kty: 'EC', crv: 'P-256', x: vapidPubX, y: vapidPubY, d: vapidPrivD },
+    { name: 'ECDSA', namedCurve: 'P-256' },
+    false,
+    ['sign']
+  );
+
   for (const sub of subscriptions) {
     try {
-      // Build the JWT for VAPID authentication
       const endpoint = new URL(sub.endpoint);
       const audience = `${endpoint.protocol}//${endpoint.host}`;
-      
-      // Create VAPID JWT
-      const header = { typ: 'JWT', alg: 'ES256' };
+
+      // --- VAPID JWT ---
       const now = Math.floor(Date.now() / 1000);
-      const claims = {
-        aud: audience,
-        exp: now + 12 * 60 * 60, // 12 hours
-        sub: 'mailto:quilty59@gmail.com',
-      };
-      
-      // Base64url encode
-      const base64url = (data: any) => {
-        const json = typeof data === 'string' ? data : JSON.stringify(data);
-        const base64 = btoa(json);
-        return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-      };
-      
-      const unsignedToken = `${base64url(header)}.${base64url(claims)}`;
-      
-      // Import the private key and sign
-      const privateKeyBase64 = vapidPrivateKey.replace(/-/g, '+').replace(/_/g, '/');
-      const privateKeyBuffer = Uint8Array.from(atob(privateKeyBase64), c => c.charCodeAt(0));
-      
-      const cryptoKey = await crypto.subtle.importKey(
-        'raw',
-        privateKeyBuffer,
-        { name: 'ECDSA', namedCurve: 'P-256' },
-        false,
-        ['sign']
-      );
-      
-      const signatureBuffer = await crypto.subtle.sign(
+      const jwtHeader = b64urlJson({ typ: 'JWT', alg: 'ES256' });
+      const jwtPayload = b64urlJson({ aud: audience, exp: now + 12 * 3600, sub: 'mailto:quilty59@gmail.com' });
+      const unsignedToken = `${jwtHeader}.${jwtPayload}`;
+
+      const sigBuf = await crypto.subtle.sign(
         { name: 'ECDSA', hash: 'SHA-256' },
-        cryptoKey,
+        vapidSigningKey,
         new TextEncoder().encode(unsignedToken)
       );
-      
-      // Convert signature from DER to raw format (if needed) and base64url encode
-      const signatureArray = new Uint8Array(signatureBuffer);
-      const signatureBase64 = btoa(String.fromCharCode(...signatureArray))
-        .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-      
-      const jwt = `${unsignedToken}.${signatureBase64}`;
-      
-      // Send the push notification
+      // ECDSA signature from WebCrypto is raw r||s (64 bytes)
+      const jwt = `${unsignedToken}.${b64url(sigBuf)}`;
+
+      // --- Web Push Encryption (aes128gcm, RFC 8291) ---
+      const clientP256dh = b64urlDecode(sub.p256dh);  // 65-byte uncompressed public key
+      const clientAuth = b64urlDecode(sub.auth);       // 16-byte auth secret
+
+      // 1. Generate ephemeral ECDH key pair
+      const localKeyPair = await crypto.subtle.generateKey(
+        { name: 'ECDH', namedCurve: 'P-256' },
+        true,
+        ['deriveBits']
+      );
+
+      // 2. Import client public key (p256dh) — usages MUST be empty for public keys in Deno
+      const clientPubKey = await crypto.subtle.importKey(
+        'raw',
+        clientP256dh,
+        { name: 'ECDH', namedCurve: 'P-256' },
+        false,
+        [] // Empty key usages for ECDH public keys
+      );
+
+      // 3. Derive shared secret via ECDH
+      const sharedSecret = new Uint8Array(
+        await crypto.subtle.deriveBits(
+          { name: 'ECDH', public: clientPubKey },
+          localKeyPair.privateKey,
+          256
+        )
+      );
+
+      // 4. Export local public key (for encryption header)
+      const localPubKeyRaw = new Uint8Array(
+        await crypto.subtle.exportKey('raw', localKeyPair.publicKey)
+      );
+
+      // 5. HKDF-based key derivation (RFC 8291)
+      const encoder = new TextEncoder();
+
+      // IKM = HKDF(auth, sharedSecret, "WebPush: info\0" || client_pub || server_pub)
+      const authInfo = new Uint8Array([
+        ...encoder.encode('WebPush: info\0'),
+        ...clientP256dh,
+        ...localPubKeyRaw,
+      ]);
+      const prkAuth = await hkdf(clientAuth, sharedSecret, authInfo, 32);
+
+      // Content Encryption Key
+      const cekInfo = encoder.encode('Content-Encoding: aes128gcm\0');
+      const salt = crypto.getRandomValues(new Uint8Array(16));
+      const cek = await hkdf(salt, prkAuth, cekInfo, 16);
+
+      // Nonce
+      const nonceInfo = encoder.encode('Content-Encoding: nonce\0');
+      const nonce = await hkdf(salt, prkAuth, nonceInfo, 12);
+
+      // 6. Encrypt payload with AES-128-GCM
+      const paddedPayload = new Uint8Array([...encoder.encode(payload), 2]); // delimiter byte
+      const aesKey = await crypto.subtle.importKey('raw', cek, 'AES-GCM', false, ['encrypt']);
+      const encrypted = new Uint8Array(
+        await crypto.subtle.encrypt({ name: 'AES-GCM', iv: nonce }, aesKey, paddedPayload)
+      );
+
+      // 7. Build aes128gcm body: salt(16) || rs(4) || idlen(1) || keyid(65) || encrypted
+      const rs = new Uint8Array(4);
+      new DataView(rs.buffer).setUint32(0, 4096, false);
+      const body = new Uint8Array([
+        ...salt,
+        ...rs,
+        localPubKeyRaw.length,
+        ...localPubKeyRaw,
+        ...encrypted,
+      ]);
+
+      // --- Send ---
       const response = await fetch(sub.endpoint, {
         method: 'POST',
         headers: {
@@ -523,23 +595,35 @@ async function sendPushNotification(
           'Content-Type': 'application/octet-stream',
           'Content-Encoding': 'aes128gcm',
           'TTL': '86400',
+          'Content-Length': String(body.byteLength),
         },
-        body: payload,
+        body,
       });
       
       if (response.status === 201 || response.status === 200) {
         console.log('Push notification sent successfully to:', sub.endpoint.substring(0, 50) + '...');
       } else if (response.status === 410 || response.status === 404) {
-        // Subscription expired or invalid, remove it
         console.log('Subscription expired, removing:', sub.id);
         await supabase.from('push_subscriptions').delete().eq('id', sub.id);
       } else {
-        console.error('Push notification failed:', response.status, await response.text());
+        const respText = await response.text();
+        console.error('Push notification failed:', response.status, respText);
       }
     } catch (pushError) {
       console.error('Error sending push to subscription:', sub.id, pushError);
     }
   }
+}
+
+/** HKDF-SHA256 extract-then-expand */
+async function hkdf(salt: Uint8Array, ikm: Uint8Array, info: Uint8Array, length: number): Promise<Uint8Array> {
+  const keyMaterial = await crypto.subtle.importKey('raw', ikm, 'HKDF', false, ['deriveBits']);
+  const derived = await crypto.subtle.deriveBits(
+    { name: 'HKDF', hash: 'SHA-256', salt, info },
+    keyMaterial,
+    length * 8
+  );
+  return new Uint8Array(derived);
 }
 
 async function sendEmailNotification(
