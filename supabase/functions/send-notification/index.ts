@@ -367,6 +367,22 @@ async function getAdminUserIds(): Promise<string[]> {
   return data.map((r: any) => r.user_id);
 }
 
+async function getAllApprovedUserIds(): Promise<string[]> {
+  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('user_id')
+    .eq('is_approved', true);
+  
+  if (error) {
+    console.error('Error fetching approved users:', error);
+    return [];
+  }
+  
+  return data.map((r: any) => r.user_id);
+}
+
 async function getAdminEmails(): Promise<string[]> {
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
   
@@ -380,6 +396,22 @@ async function getAdminEmails(): Promise<string[]> {
   
   if (error) {
     console.error('Error fetching admin emails:', error);
+    return [];
+  }
+  
+  return data.map((p: any) => p.email).filter(Boolean);
+}
+
+async function getAllApprovedEmails(): Promise<string[]> {
+  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('email')
+    .eq('is_approved', true);
+  
+  if (error) {
+    console.error('Error fetching approved user emails:', error);
     return [];
   }
   
@@ -670,7 +702,10 @@ const handler = async (req: Request): Promise<Response> => {
     let targetUserIds: string[] = [];
 
     // Determine target users for in-app notification
-    if (targetUserId) {
+    if (type === 'msp_validated' || type === 'site_created') {
+      // Notify ALL approved users for validated MSPs and new sites
+      targetUserIds = await getAllApprovedUserIds();
+    } else if (targetUserId) {
       targetUserIds = [targetUserId];
     } else {
       targetUserIds = await getAdminUserIds();
@@ -697,14 +732,12 @@ const handler = async (req: Request): Promise<Response> => {
     }
     
     else if (type === 'msp_validated') {
-      // Send email to the creator (formateur)
-      if (targetUserId) {
-        const userEmail = await getUserEmail(targetUserId);
-        if (userEmail) {
-          const { subject, html } = generateMspValidatedEmail(metadata || {});
-          await sendEmailNotification([userEmail], subject, html);
-          console.log('MSP validated email sent to:', userEmail);
-        }
+      // Send email to all approved users
+      const allEmails = await getAllApprovedEmails();
+      if (allEmails.length > 0) {
+        const { subject, html } = generateMspValidatedEmail(metadata || {});
+        await sendEmailNotification(allEmails, subject, html);
+        console.log('MSP validated email sent to all users:', allEmails);
       }
     }
     
@@ -721,11 +754,11 @@ const handler = async (req: Request): Promise<Response> => {
     }
     
     else if (type === 'site_created') {
-      // Send email to admins
-      const adminEmails = await getAdminEmails();
+      // Send email to all approved users
+      const allEmails = await getAllApprovedEmails();
       const { subject, html } = generateSiteCreatedEmail(metadata || {});
-      await sendEmailNotification(adminEmails, subject, html);
-      console.log('Site created email sent to admins:', adminEmails);
+      await sendEmailNotification(allEmails, subject, html);
+      console.log('Site created email sent to all users:', allEmails);
     }
     
     // Note: 'user_signup' emails are handled by send-admin-notification function

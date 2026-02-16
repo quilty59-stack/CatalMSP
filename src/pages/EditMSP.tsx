@@ -132,16 +132,16 @@ export default function EditMSP() {
       if (updateError) throw updateError;
 
       // Check if status changed to validated - send notification to creator
-      if (isAdmin && originalStatus !== 'validee' && formData.status === 'validee' && msp.createdBy) {
+      if (isAdmin && originalStatus !== 'validee' && formData.status === 'validee') {
         await sendNotification({
           type: 'msp_validated',
-          title: 'Votre MSP a été validée !',
-          message: `Votre MSP "${formData.title}" a été validée par un administrateur. Elle est maintenant consultable.`,
+          title: 'Nouvelle MSP validée !',
+          message: `La MSP "${formData.title}" a été validée et est maintenant consultable par tous.`,
           link: `/msp/${msp.slug}`,
-          targetUserId: msp.createdBy,
           metadata: {
             mspId: msp.id,
             mspTitle: formData.title,
+            mspSlug: msp.slug,
           },
         });
       }
