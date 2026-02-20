@@ -113,10 +113,10 @@ export default function CatalogueParSite() {
                 <Link key={site.id} to={`/sites/${site.id}/msps`}>
                   <Card className="card-interactive h-full cursor-pointer group">
                     <CardContent className="p-5 flex gap-4">
-                      {site.photoEntreeUrl && (
+                      {site.photoUrl && (
                         <img
-                          src={site.photoEntreeUrl}
-                          alt={`Entrée de ${site.name}`}
+                          src={site.photoUrl}
+                          alt={`Photo de ${site.name}`}
                           className="h-16 w-24 rounded-md object-cover shrink-0"
                         />
                       )}
