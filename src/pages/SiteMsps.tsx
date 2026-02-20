@@ -94,7 +94,7 @@ export default function SiteMsps() {
                       </TableCell>
                       <TableCell className="text-right">
                         <Button variant="ghost" size="sm" asChild>
-                          <Link to={`/msp/${msp.slug}`}>
+                          <Link to={`/msp/${msp.slug}?fromSiteId=${siteId}`}>
                             <ExternalLink className="w-4 h-4 mr-1" />
                             <span className="hidden sm:inline">Voir la fiche</span>
                           </Link>

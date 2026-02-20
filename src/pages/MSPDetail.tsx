@@ -1,4 +1,4 @@
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useSearchParams } from 'react-router-dom';
 import { Layout } from '@/components/Layout';
 import { SITE_TYPES } from '@/types/msp';
 import { StatusBadge } from '@/components/ui/StatusBadge';
@@ -36,12 +36,15 @@ import { useMsp } from '@/hooks/useMsp';
 
 export default function MSPDetail() {
   const { slug } = useParams();
+  const [searchParams] = useSearchParams();
+  const fromSiteId = searchParams.get('fromSiteId');
+  const backTo = fromSiteId ? `/sites/${fromSiteId}/msps` : '/catalogue';
   const { msp, isLoading, error } = useMsp(slug);
   const [showQR, setShowQR] = useState(false);
 
   if (isLoading) {
     return (
-      <Layout showBack>
+      <Layout showBack backTo={backTo}>
         <div className="flex items-center justify-center min-h-[60vh]">
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
         </div>
@@ -51,10 +54,10 @@ export default function MSPDetail() {
 
   if (!msp || error) {
     return (
-      <Layout showBack>
+      <Layout showBack backTo={backTo}>
         <div className="flex flex-col items-center justify-center min-h-[60vh] px-4">
           <p className="text-muted-foreground mb-4">Fiche MSP introuvable</p>
-          <Link to="/catalogue">
+          <Link to={backTo}>
             <Button>Retour au catalogue</Button>
           </Link>
         </div>
@@ -81,7 +84,7 @@ export default function MSPDetail() {
   };
 
   return (
-    <Layout showBack backTo="/catalogue">
+    <Layout showBack backTo={backTo}>
       <div className="px-4 py-4 space-y-4">
         {/* Header Card - 3 columns: Title | Info | Map */}
         <motion.div
