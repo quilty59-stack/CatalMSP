@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Home, FolderOpen, Plus, QrCode, Building2, Settings, HelpCircle, Map, Shield, FileText } from 'lucide-react';
+import { Home, FolderOpen, Plus, QrCode, Building2, Settings, HelpCircle, Map, Shield, FileText, LayoutList } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { useAuth } from '@/hooks/useAuth';
@@ -8,6 +8,7 @@ import logo from '@/assets/logo.png';
 const navItems = [
   { icon: Home, label: 'Accueil', path: '/' },
   { icon: FolderOpen, label: 'Fiches MSP', path: '/catalogue' },
+  { icon: LayoutList, label: 'MSP par site', path: '/catalogue-par-site' },
   { icon: Building2, label: 'Sites conventionnés', path: '/sites' },
   { icon: Map, label: 'Carte', path: '/carte' },
   { icon: QrCode, label: 'Scanner QR', path: '/scanner' },
