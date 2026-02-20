@@ -164,7 +164,7 @@ const Index = () => {
 
           {/* Quick Actions Grid - 3 columns for mobile */}
           <div className="grid grid-cols-3 gap-2 mt-4">
-            <Link to="/catalogue">
+            <Link to="/catalogue-par-site">
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}

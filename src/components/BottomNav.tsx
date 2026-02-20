@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils';
 
 const navItems = [
   { icon: Home, label: 'Accueil', path: '/' },
-  { icon: FolderOpen, label: 'MSP', path: '/catalogue' },
+  { icon: FolderOpen, label: 'MSP', path: '/catalogue-par-site' },
   { icon: Plus, label: 'Créer', path: '/creer', accent: true },
   { icon: Building2, label: 'Sites', path: '/sites' },
   { icon: Map, label: 'Carte', path: '/carte' },
@@ -18,9 +18,9 @@ export function BottomNav() {
       <div className="container flex items-center justify-around h-14 px-2">
         {navItems.map((item) => {
           let isActive = location.pathname === item.path;
-          // "MSP" tab: also active on /msp/:slug
-          if (!isActive && item.path === '/catalogue') {
-            isActive = location.pathname.startsWith('/msp/');
+          // "MSP" tab: active on /catalogue-par-site and /sites/:id/msps
+          if (!isActive && item.path === '/catalogue-par-site') {
+            isActive = location.pathname.startsWith('/sites/') && location.pathname.includes('/msps');
           }
           // "Sites" tab: active on /sites but NOT on /sites/:id/msps (that's catalogue-par-site territory)
           if (!isActive && item.path === '/sites') {
