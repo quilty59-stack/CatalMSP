@@ -701,13 +701,21 @@ const handler = async (req: Request): Promise<Response> => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     let targetUserIds: string[] = [];
 
-    // Determine target users for in-app notification
-    if (type === 'msp_validated' || type === 'site_created') {
-      // Notify ALL approved users for validated MSPs and new sites
+    // Determine target users for in-app + push notifications
+    if (type === 'msp_created') {
+      // Only admins receive notification for new MSP drafts
+      targetUserIds = await getAdminUserIds();
+    } else if (type === 'msp_validated') {
+      // ALL approved users receive notification when a MSP is validated
+      targetUserIds = await getAllApprovedUserIds();
+    } else if (type === 'site_created') {
+      // ALL approved users receive notification when a new site is published
       targetUserIds = await getAllApprovedUserIds();
     } else if (targetUserId) {
+      // Specific user (e.g. msp_rejected → the creator)
       targetUserIds = [targetUserId];
     } else {
+      // Fallback: notify admins
       targetUserIds = await getAdminUserIds();
     }
 
