@@ -45,6 +45,8 @@ export default function CreateSite() {
   const [photos, setPhotos] = useState<UploadedPhoto[]>([]);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [entreePreview, setEntreePreview] = useState<string | null>(null);
+  const [entreeFile, setEntreeFile] = useState<File | null>(null);
   
   const handleLogoCapture = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -61,6 +63,23 @@ export default function CreateSite() {
   const removeLogo = () => {
     setLogoPreview(null);
     setLogoFile(null);
+  };
+
+  const handleEntreeCapture = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setEntreeFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setEntreePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeEntree = () => {
+    setEntreePreview(null);
+    setEntreeFile(null);
   };
   
   const [formData, setFormData] = useState({
@@ -232,6 +251,24 @@ export default function CreateSite() {
         }
       }
 
+      // Upload entrance photo if present
+      let photoEntreeUrl = null;
+      if (entreeFile) {
+        const entreeExt = entreeFile.name.split('.').pop();
+        const entreeFileName = `sites/${slug}/photo-entree.${entreeExt}`;
+        
+        const { error: entreeUploadError } = await supabase.storage
+          .from('msp-photos')
+          .upload(entreeFileName, entreeFile);
+        
+        if (!entreeUploadError) {
+          const { data: entreeUrlData } = supabase.storage
+            .from('msp-photos')
+            .getPublicUrl(entreeFileName);
+          photoEntreeUrl = entreeUrlData.publicUrl;
+        }
+      }
+
       // Insert site
       const { data, error } = await supabase
         .from('sites_conventionnes')
@@ -259,6 +296,7 @@ export default function CreateSite() {
           convention_expires_at: formData.conventionExpiresAt || null,
           photo_url: photoUrl,
           logo_url: logoUrl,
+          photo_entree_url: photoEntreeUrl,
           created_by: user?.id || null,
         }])
         .select()
@@ -367,6 +405,51 @@ export default function CreateSite() {
               >
                 <ImageIcon className="w-8 h-8 text-muted-foreground" />
                 <span className="text-xs text-muted-foreground text-center">Ajouter un logo</span>
+              </label>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Photo d'entrée */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Camera className="w-4 h-4" />
+              Photo d'entrée du site
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleEntreeCapture}
+              className="hidden"
+              id="entree-upload-create"
+            />
+            
+            {entreePreview ? (
+              <div className="relative">
+                <img 
+                  src={entreePreview} 
+                  alt="Entrée du site" 
+                  className="w-full h-48 object-cover rounded-xl"
+                />
+                <Button
+                  variant="destructive"
+                  size="icon"
+                  className="absolute top-2 right-2"
+                  onClick={removeEntree}
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            ) : (
+              <label 
+                htmlFor="entree-upload-create"
+                className="h-32 border-2 border-dashed border-border rounded-xl flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors"
+              >
+                <Camera className="w-8 h-8 text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">Ajouter une photo d'entrée</span>
               </label>
             )}
           </CardContent>

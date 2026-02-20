@@ -1,6 +1,13 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { SiteConventionne, transformDbToSite } from '@/types/site';
+
+interface SiteSummary {
+  id: string;
+  name: string;
+  commune: string;
+  siteType: string;
+  photoEntreeUrl: string | null;
+}
 
 interface MspSummary {
   id: string;
@@ -13,7 +20,7 @@ interface MspSummary {
 }
 
 export function useCatalogueParSite() {
-  const [sites, setSites] = useState<SiteConventionne[]>([]);
+  const [sites, setSites] = useState<SiteSummary[]>([]);
   const [mspBySite, setMspBySite] = useState<Record<string, MspSummary[]>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -26,7 +33,7 @@ export function useCatalogueParSite() {
     try {
       // Parallel queries
       const [sitesRes, mspRes] = await Promise.all([
-        supabase.from('sites_conventionnes').select('*').order('name'),
+        supabase.from('sites_conventionnes').select('id, name, commune, site_type, photo_entree_url').order('name'),
         supabase.from('msp').select('id, slug, title, theme, status, site_conventionne_id, updated_at')
           .not('site_conventionne_id', 'is', null),
       ]);
@@ -34,7 +41,13 @@ export function useCatalogueParSite() {
       if (sitesRes.error) throw sitesRes.error;
       if (mspRes.error) throw mspRes.error;
 
-      setSites((sitesRes.data || []).map(transformDbToSite));
+      setSites((sitesRes.data || []).map(r => ({
+        id: r.id,
+        name: r.name,
+        commune: r.commune,
+        siteType: r.site_type,
+        photoEntreeUrl: r.photo_entree_url,
+      })));
 
       const grouped: Record<string, MspSummary[]> = {};
       for (const row of mspRes.data || []) {

@@ -1,0 +1,1 @@
+ALTER TABLE public.sites_conventionnes ADD COLUMN photo_entree_url text;

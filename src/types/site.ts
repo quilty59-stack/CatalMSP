@@ -17,6 +17,7 @@ export interface SiteConventionne {
   notes?: string;
   photoUrl?: string;
   logoUrl?: string;
+  photoEntreeUrl?: string;
   conventionNotes?: string;
   accessKeys?: string;
   recurrence?: string;
@@ -61,6 +62,7 @@ export const transformDbToSite = (record: any): SiteConventionne => ({
   notes: record.notes,
   photoUrl: record.photo_url,
   logoUrl: record.logo_url,
+  photoEntreeUrl: record.photo_entree_url,
   conventionNotes: record.convention_notes,
   accessKeys: record.access_keys,
   recurrence: record.recurrence,

@@ -112,30 +112,39 @@ export default function CatalogueParSite() {
               return (
                 <Link key={site.id} to={`/sites/${site.id}/msps`}>
                   <Card className="card-interactive h-full cursor-pointer group">
-                    <CardContent className="p-5 flex flex-col gap-3">
-                      <div className="flex items-start justify-between gap-2">
-                        <h3 className="font-semibold text-foreground leading-tight line-clamp-2">
-                          {site.name}
-                        </h3>
-                        <ChevronRight className="w-5 h-5 text-muted-foreground shrink-0 group-hover:text-primary transition-colors" />
-                      </div>
-
-                      <p className="text-sm text-muted-foreground">{site.commune}</p>
-
-                      <Badge variant="outline" className="text-xs w-fit">
-                        {SITE_TYPES[site.siteType as keyof typeof SITE_TYPES] || site.siteType}
-                      </Badge>
-
-                      <div className="mt-auto pt-2 border-t border-border space-y-2">
-                        <div className="flex items-center justify-between text-xs">
-                          <span>
-                            <span className="font-medium text-success">{validatedCount} validée{validatedCount > 1 ? 's' : ''}</span>
-                            {' / '}
-                            <span className="text-muted-foreground">{total} MSP</span>
-                          </span>
-                          <span className="text-muted-foreground">{pct}%</span>
+                    <CardContent className="p-5 flex gap-4">
+                      {site.photoEntreeUrl && (
+                        <img
+                          src={site.photoEntreeUrl}
+                          alt={`Entrée de ${site.name}`}
+                          className="h-16 w-24 rounded-md object-cover shrink-0"
+                        />
+                      )}
+                      <div className="flex flex-col gap-3 flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2">
+                          <h3 className="font-semibold text-foreground leading-tight line-clamp-2">
+                            {site.name}
+                          </h3>
+                          <ChevronRight className="w-5 h-5 text-muted-foreground shrink-0 group-hover:text-primary transition-colors" />
                         </div>
-                        <Progress value={pct} className="h-1.5" />
+
+                        <p className="text-sm text-muted-foreground">{site.commune}</p>
+
+                        <Badge variant="outline" className="text-xs w-fit">
+                          {SITE_TYPES[site.siteType as keyof typeof SITE_TYPES] || site.siteType}
+                        </Badge>
+
+                        <div className="mt-auto pt-2 border-t border-border space-y-2">
+                          <div className="flex items-center justify-between text-xs">
+                            <span>
+                              <span className="font-medium text-success">{validatedCount} validée{validatedCount > 1 ? 's' : ''}</span>
+                              {' / '}
+                              <span className="text-muted-foreground">{total} MSP</span>
+                            </span>
+                            <span className="text-muted-foreground">{pct}%</span>
+                          </div>
+                          <Progress value={pct} className="h-1.5" />
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
