@@ -112,15 +112,24 @@ export default function CatalogueParSite() {
               return (
                 <Link key={site.id} to={`/sites/${site.id}/msps`}>
                   <Card className="card-interactive h-full cursor-pointer group">
-                    <CardContent className="p-5 flex gap-4">
+                    <CardContent className="p-0 sm:p-5 sm:flex sm:gap-4">
+                      {/* Mobile: full-width image on top */}
                       {site.photoUrl && (
                         <img
                           src={site.photoUrl}
                           alt={`Photo de ${site.name}`}
-                          className="h-16 w-24 rounded-md object-cover shrink-0"
+                          className="w-full h-32 object-cover rounded-t-xl sm:hidden"
                         />
                       )}
-                      <div className="flex flex-col gap-3 flex-1 min-w-0">
+                      {/* Desktop: small thumbnail left */}
+                      {site.photoUrl && (
+                        <img
+                          src={site.photoUrl}
+                          alt={`Photo de ${site.name}`}
+                          className="hidden sm:block h-16 w-24 rounded-md object-cover shrink-0"
+                        />
+                      )}
+                      <div className="flex flex-col gap-3 flex-1 min-w-0 p-4 sm:p-0">
                         <div className="flex items-start justify-between gap-2">
                           <h3 className="font-semibold text-foreground leading-tight line-clamp-2">
                             {site.name}
