@@ -63,6 +63,8 @@ export function DesktopSidebar() {
             isActive = location.pathname.startsWith('/msp/');
           } else if (!isActive && item.path === '/catalogue-par-site') {
             isActive = location.pathname.startsWith('/sites/') && location.pathname.includes('/msps');
+          } else if (!isActive && item.path === '/sites') {
+            isActive = location.pathname.startsWith('/sites') && !location.pathname.includes('/msps');
           } else if (!isActive && item.path !== '/') {
             isActive = location.pathname.startsWith(item.path);
           }
