@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { FolderOpen, Plus, ChevronRight, Loader2, Building2, TrendingUp, Clock, MapPin, Settings, Menu, List, QrCode, Moon, Info, Shield } from 'lucide-react';
+import { FolderOpen, Plus, ChevronRight, Loader2, Building2, TrendingUp, Clock, MapPin, Settings, Menu, List, QrCode, Moon, Info, Shield, LayoutList } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { MSPCard } from '@/components/MSPCard';
 import { MSP, Theme, Status } from '@/types/msp';
@@ -347,6 +347,14 @@ const Index = () => {
               >
                 <FolderOpen className="w-5 h-5 text-primary" />
                 <span className="font-medium">Catalogue MSP</span>
+              </Link>
+              <Link 
+                to="/catalogue-par-site" 
+                onClick={() => setMenuOpen(false)}
+                className="flex items-center gap-3 p-4 rounded-xl hover:bg-muted transition-colors"
+              >
+                <LayoutList className="w-5 h-5 text-primary" />
+                <span className="font-medium">MSP par site</span>
               </Link>
               <Link 
                 to="/sites" 
