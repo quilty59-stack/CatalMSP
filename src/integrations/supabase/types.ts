@@ -291,6 +291,7 @@ export type Database = {
           longitude: number | null
           name: string
           notes: string | null
+          photo_entree_url: string | null
           photo_url: string | null
           postal_code: string | null
           recurrence: string | null
@@ -320,6 +321,7 @@ export type Database = {
           longitude?: number | null
           name: string
           notes?: string | null
+          photo_entree_url?: string | null
           photo_url?: string | null
           postal_code?: string | null
           recurrence?: string | null
@@ -349,6 +351,7 @@ export type Database = {
           longitude?: number | null
           name?: string
           notes?: string | null
+          photo_entree_url?: string | null
           photo_url?: string | null
           postal_code?: string | null
           recurrence?: string | null
