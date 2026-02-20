@@ -11,6 +11,7 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import Catalogue from "./pages/Catalogue";
 import CatalogueParSite from "./pages/CatalogueParSite";
+import SiteMsps from "./pages/SiteMsps";
 import CreateMSP from "./pages/CreateMSP";
 import MSPDetail from "./pages/MSPDetail";
 import EditMSP from "./pages/EditMSP";
@@ -81,6 +82,7 @@ const App = () => {
                   <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
                   <Route path="/catalogue" element={<ProtectedRoute><Catalogue /></ProtectedRoute>} />
                   <Route path="/catalogue-par-site" element={<ProtectedRoute><CatalogueParSite /></ProtectedRoute>} />
+                  <Route path="/sites/:siteId/msps" element={<ProtectedRoute><SiteMsps /></ProtectedRoute>} />
                   <Route path="/creer" element={<ProtectedRoute><CreateMSP /></ProtectedRoute>} />
                   <Route path="/msp/:slug" element={<ProtectedRoute><MSPDetail /></ProtectedRoute>} />
                   <Route path="/msp/:slug/edit" element={<ProtectedRoute><EditMSP /></ProtectedRoute>} />
