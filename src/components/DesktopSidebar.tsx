@@ -58,8 +58,14 @@ export function DesktopSidebar() {
           Navigation
         </div>
         {navItems.map((item) => {
-          const isActive = location.pathname === item.path || 
-            (item.path !== '/' && location.pathname.startsWith(item.path));
+          let isActive = location.pathname === item.path;
+          if (!isActive && item.path === '/catalogue') {
+            isActive = location.pathname.startsWith('/msp/');
+          } else if (!isActive && item.path === '/catalogue-par-site') {
+            isActive = location.pathname.startsWith('/sites/') && location.pathname.includes('/msps');
+          } else if (!isActive && item.path !== '/') {
+            isActive = location.pathname.startsWith(item.path);
+          }
           const Icon = item.icon;
 
           return (
