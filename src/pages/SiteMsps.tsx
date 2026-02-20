@@ -82,7 +82,7 @@ export default function SiteMsps() {
                 <TableBody>
                   {msps.map((msp) => (
                     <TableRow key={msp.id}>
-                      <TableCell className="font-medium max-w-[200px] truncate">{msp.title}</TableCell>
+                      <TableCell className="font-medium max-w-[180px] sm:max-w-[200px] truncate">{msp.title}</TableCell>
                       <TableCell className="hidden sm:table-cell">
                         <ThemeBadge theme={msp.theme} />
                       </TableCell>
@@ -93,9 +93,9 @@ export default function SiteMsps() {
                         {format(new Date(msp.updatedAt), 'dd MMM yyyy', { locale: fr })}
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button variant="ghost" size="sm" asChild>
+                        <Button variant="ghost" size="sm" className="min-h-[44px] min-w-[44px]" asChild>
                           <Link to={`/msp/${msp.slug}?fromSiteId=${siteId}`}>
-                            <ExternalLink className="w-4 h-4 mr-1" />
+                            <ExternalLink className="w-4 h-4 sm:mr-1" />
                             <span className="hidden sm:inline">Voir la fiche</span>
                           </Link>
                         </Button>

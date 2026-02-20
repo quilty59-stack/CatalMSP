@@ -17,7 +17,15 @@ export function BottomNav() {
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-lg border-t border-border pb-[env(safe-area-inset-bottom)]">
       <div className="container flex items-center justify-around h-14 px-2">
         {navItems.map((item) => {
-          const isActive = location.pathname === item.path;
+          let isActive = location.pathname === item.path;
+          // "MSP" tab: also active on /msp/:slug
+          if (!isActive && item.path === '/catalogue') {
+            isActive = location.pathname.startsWith('/msp/');
+          }
+          // "Sites" tab: active on /sites but NOT on /sites/:id/msps (that's catalogue-par-site territory)
+          if (!isActive && item.path === '/sites') {
+            isActive = location.pathname.startsWith('/sites') && !location.pathname.includes('/msps');
+          }
           const Icon = item.icon;
 
           return (
