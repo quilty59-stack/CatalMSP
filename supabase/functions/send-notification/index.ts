@@ -620,6 +620,9 @@ async function sendPushNotification(
       ]);
 
       // --- Send ---
+      console.log(`[PUSH] Sending to endpoint: ${sub.endpoint.substring(0, 80)}...`);
+      console.log(`[PUSH] Body size: ${body.byteLength} bytes, user: ${sub.user_id}`);
+      
       const response = await fetch(sub.endpoint, {
         method: 'POST',
         headers: {
@@ -627,22 +630,23 @@ async function sendPushNotification(
           'Content-Type': 'application/octet-stream',
           'Content-Encoding': 'aes128gcm',
           'TTL': '86400',
-          'Content-Length': String(body.byteLength),
         },
-        body,
+        body: body.buffer,
       });
       
+      const respText = await response.text();
+      console.log(`[PUSH] Response status: ${response.status}, body: ${respText.substring(0, 200)}`);
+      
       if (response.status === 201 || response.status === 200) {
-        console.log('Push notification sent successfully to:', sub.endpoint.substring(0, 50) + '...');
+        console.log('[PUSH] ✅ Push sent successfully');
       } else if (response.status === 410 || response.status === 404) {
-        console.log('Subscription expired, removing:', sub.id);
+        console.log('[PUSH] Subscription expired, removing:', sub.id);
         await supabase.from('push_subscriptions').delete().eq('id', sub.id);
       } else {
-        const respText = await response.text();
-        console.error('Push notification failed:', response.status, respText);
+        console.error(`[PUSH] ❌ Failed: ${response.status} ${respText}`);
       }
     } catch (pushError) {
-      console.error('Error sending push to subscription:', sub.id, pushError);
+      console.error('[PUSH] Error sending push to subscription:', sub.id, pushError?.message || pushError);
     }
   }
 }

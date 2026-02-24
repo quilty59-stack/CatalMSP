@@ -82,6 +82,7 @@ export default defineConfig(({ mode }) => ({
       },
       workbox: {
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
+        navigateFallbackDenylist: [/^\/~oauth/],
         // Import push notification handler in service worker
         importScripts: ['/sw-push.js'],
         runtimeCaching: [
